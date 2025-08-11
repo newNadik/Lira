@@ -38,6 +38,7 @@ struct ContentView: View {
                 gridRow("Explored radius (km)", value: vm.state.exploredRadiusKm)
                 gridRow("Build points", value: vm.state.buildPoints)
                 gridRow("Science points", value: vm.state.sciencePoints)
+                gridRow("Schools", value: vm.state.schoolCount, asInt: true)
             }
         }
     }

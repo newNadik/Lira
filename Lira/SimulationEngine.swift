@@ -44,10 +44,23 @@ public struct SimulationEngine {
         // 3) Food production and consumption (use integer-effective counts)
         let cropVarietyMultiplier = 1 + tuning.cropVarietyMaxUplift * (1 - exp(-state.exploredRadiusKm / tuning.cropVarietyRadiusScaleKm))
         let yieldPerGreenhouse = tuning.baseYieldPerGreenhouse * (1 + tuning.yieldTechBonusPerLevel * state.technologyLevel) * cropVarietyMultiplier
-        let dailyYield = state.greenhouseCount * yieldPerGreenhouse * sunlightMultiplier
 
         let effectivePopulation = floor(state.population)
         let effectiveBeds = floor(state.housingCapacity)
+        
+        // Soft-cap runaway food: if rations per person are very high, gently dampen yield
+        let bufferPerCapita = (effectivePopulation > 0)
+            ? state.foodStockRations / effectivePopulation
+            : state.foodStockRations // if pop==0, keep as-is (edge case)
+        let start = max(1.0, tuning.foodSoftCapStartDays)
+        let alpha = max(0, tuning.foodSoftCapStrength)
+        // Damping grows with how far we are beyond the start buffer; never below 50%
+        let softCapFactor: Double = (bufferPerCapita <= start)
+            ? 1.0
+            : max(0.5, 1.0 / (1.0 + alpha * ((bufferPerCapita - start) / start)))
+
+        let dailyYield = state.greenhouseCount * yieldPerGreenhouse * sunlightMultiplier * softCapFactor
+        
         let dailyConsumption = effectivePopulation * tuning.rationPerPersonPerDay
         
         let previousFood = state.foodStockRations
@@ -62,6 +75,65 @@ public struct SimulationEngine {
         let clampedFoodSurplus = max(-1, min(1, foodSurplusRatio))
 
         // 4) Building (passive + exercise + tech bonus)
+        // Use buffer days (rations per person) to decide priorities
+        let effectivePop = max(1.0, floor(state.population))
+        let dailyConsumptionCheck = effectivePop * tuning.rationPerPersonPerDay
+
+        let cropVarietyMultiplierCheck = 1 + tuning.cropVarietyMaxUplift * (1 - exp(-state.exploredRadiusKm / tuning.cropVarietyRadiusScaleKm))
+        let yieldPerGreenhouseCheck = tuning.baseYieldPerGreenhouse
+            * (1 + tuning.yieldTechBonusPerLevel * state.technologyLevel)
+            * cropVarietyMultiplierCheck
+        let dailyYieldCheck = state.greenhouseCount * yieldPerGreenhouseCheck // baseline; zero-daylight never penalizes
+
+        let bufferDays = state.foodStockRations / dailyConsumptionCheck
+        let freeBeds = Int(floor(state.housingCapacity - effectivePop))
+
+        // Eligible specs by tech
+        let eligible = Config.buildingCatalog.filter { $0.minTechLevel <= state.technologyLevel }
+        
+        // If there is nothing planned, pick something from the catalog based on current needs
+        if state.buildQueue.isEmpty {
+            // (keep your existing effectivePop/bufferDays/freeBeds/eligible calcs)
+
+            let desiredKind: BuildKind? = {
+                if bufferDays < tuning.foodBufferTargetDays,
+                   state.greenhouseCount < tuning.greenhousesPerCapitaTarget * effectivePop,
+                   eligible.contains(where: { $0.kind == .greenhouse }) {
+                    return .greenhouse
+                }
+
+                let overbuildGuard = (state.housingCapacity < (effectivePop + tuning.housingOverbuildBeds))
+                if freeBeds < 2, overbuildGuard,
+                   eligible.contains(where: { $0.kind == .house }) {
+                    return .house
+                }
+
+                let targetSchools = floor(effectivePop / max(1.0, tuning.studentsPerSchool))
+                if state.schoolCount < targetSchools,
+                   eligible.contains(where: { $0.kind == .school }) {
+                    return .school
+                }
+
+                // No current need → don't enqueue anything.
+                return nil
+            }()
+
+            if let kind = desiredKind {
+                // Highest tier available for that kind at current tech
+                let candidates = eligible.filter { $0.kind == kind }
+                if let spec = candidates.max(by: { $0.minTechLevel < $1.minTechLevel }) {
+                    state.buildQueue.append(
+                        Building(kind: spec.kind,
+                                 displayName: spec.displayName,
+                                 costPoints: spec.costPoints,
+                                 minTechLevel: spec.minTechLevel)
+                    )
+                    // Optional planning log:
+                    // EventGenerator.constructionPlanned(day: state.currentDayIndex, displayName: spec.displayName, state: &state)
+                }
+            }
+        }
+        
         state.buildPoints += (tuning.baseBuildPointsPerDay + buildPointGainFromExercise) * (1 + tuning.buildTechBonusPerLevel * state.technologyLevel)
 
         // Progress milestones only for the first item; at most one completion/day
@@ -77,14 +149,17 @@ public struct SimulationEngine {
                 state.buildPoints -= next.costPoints
                 switch next.kind {
                 case .house:
-                    state.housingCapacity += 4
-                    EventGenerator.builtHouse(day: state.currentDayIndex, state: &state)
+                    let techMult = max(1.0, next.minTechLevel)
+                    let bedsAdded = 4.0 * techMult   // 4 beds baseline, scaled by tech
+                    state.housingCapacity += bedsAdded
+                    EventGenerator.builtHouse(day: state.currentDayIndex, state: &state, displayName: next.displayName, bedsAdded: Int(bedsAdded))
                 case .greenhouse:
                     state.greenhouseCount += 1
-                    EventGenerator.builtGreenhouse(day: state.currentDayIndex, state: &state)
+                    EventGenerator.builtGreenhouse(day: state.currentDayIndex, state: &state, displayName: next.displayName)
                 case .school:
                     state.technologyLevel += 0.5
-                    EventGenerator.openedSchool(day: state.currentDayIndex, state: &state)
+                    state.schoolCount += 1
+                    EventGenerator.openedSchool(day: state.currentDayIndex, state: &state, displayName: next.displayName)
                 }
                 _ = state.buildQueue.removeFirst()
                 // Only one completion per day; do not attempt additional builds today.
@@ -103,8 +178,19 @@ public struct SimulationEngine {
         let capacityFactor = max(0, min(1, (effectiveBeds - effectivePopulation) / max(effectivePopulation, 1)))
         let foodFactor = max(0, min(1, 0.55 + 0.45 * clampedFoodSurplus))
 
-        // Cozy rule: no deaths; if food is zero, growth pauses instead.
-        let births = shortageToday ? 0 : (tuning.basePopulationGrowthRate * state.population * capacityFactor * foodFactor)
+        // Cozy rule: no deaths; if food is zero, growth pauses.
+        // Add a small comfort bonus to births when the pantry is healthy.
+        let baseBirths = tuning.basePopulationGrowthRate * state.population * capacityFactor * foodFactor
+
+        let bufferDaysForBonus = (effectivePopulation > 0)
+            ? state.foodStockRations / (effectivePopulation * tuning.rationPerPersonPerDay)
+            : 0
+        let t0 = tuning.foodBufferTargetDays
+        let tMax = max(t0 + 0.1, tuning.birthsComfortAtDays)
+        let comfortProgress = max(0, min(1, (bufferDaysForBonus - t0) / (tMax - t0)))
+        let comfortMult = 1.0 + tuning.birthsComfortBonusMax * comfortProgress
+
+        let births = shortageToday ? 0 : (baseBirths * comfortMult)
         let deaths: Double = 0
 
         let previousPopulation = state.population

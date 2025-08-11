@@ -9,16 +9,26 @@ struct DailyHealthMetrics: Codable {
     static let zero = DailyHealthMetrics(steps: 0, daylightMinutes: 0, exerciseMinutes: 0, sleepHours: 0)
 }
 
-struct BuildItem: Identifiable, Codable {
-    enum BuildKind: String, Codable {
-        case house
-        case greenhouse
-        case school
-    }
+enum BuildKind: String, Codable {
+    case house
+    case greenhouse
+    case school
+}
 
+// REPLACE BuildItem + BuildingSpec with a single Building
+struct Building: Identifiable, Codable {
     var id: UUID = UUID()
     var kind: BuildKind
+    var displayName: String
     var costPoints: Double
+    var minTechLevel: Double
+
+    init(kind: BuildKind, displayName: String? = nil, costPoints: Double, minTechLevel: Double) {
+        self.kind = kind
+        self.displayName = displayName ?? kind.rawValue.capitalized
+        self.costPoints = costPoints
+        self.minTechLevel = minTechLevel
+    }
 }
 
 struct SimulationState: Codable {
@@ -30,8 +40,9 @@ struct SimulationState: Codable {
     var exploredRadiusKm: Double
     var technologyLevel: Double
     var greenhouseCount: Double
+    var schoolCount: Double
     var buildPoints: Double
-    var buildQueue: [BuildItem]
+    var buildQueue: [Building]
     var eventLog: [String]
 
     init() {
@@ -44,6 +55,7 @@ struct SimulationState: Codable {
         technologyLevel = 0
         buildPoints = 0
         greenhouseCount = 1
+        schoolCount = 0
         buildQueue = []
         eventLog = []
     }

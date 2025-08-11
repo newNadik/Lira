@@ -27,8 +27,8 @@ public struct SimTuning {
 
     // MARK: Food / yields
     public var rationPerPersonPerDay: Double = 1.0
-    public var baseYieldPerGreenhouse: Double = 4.2
-    public var yieldTechBonusPerLevel: Double = 0.15
+    public var baseYieldPerGreenhouse: Double = 3.0
+    public var yieldTechBonusPerLevel: Double = 0.05
     public var cropVarietyMaxUplift: Double = 0.5                   // asymptotic boost from exploration
     public var cropVarietyRadiusScaleKm: Double = 10.0              // exploration scale for variety
 
@@ -38,4 +38,18 @@ public struct SimTuning {
 
     // MARK: UX thresholds
     public var minArrivalAnnouncement: Double = 0.1                 // not used now (we log on int change)
+    
+    // Balancing: food soft-cap & comfort growth
+    public var foodBufferTargetDays: Double = 1.2      // target rations per person
+    public var foodSoftCapStartDays: Double = 10.0     // start damping yield above this buffer
+    public var foodSoftCapStrength: Double = 0.6       // higher = stronger damping
+
+    public var birthsComfortBonusMax: Double = 0.25    // +25% max boost when pantry is very comfy
+    public var birthsComfortAtDays: Double = 12.0      // reach max bonus by this buffer
+
+    // Planning guard: don't overbuild housing
+    public var housingOverbuildBeds: Double = 6.0      // only add beds if free beds < 2 AND
+                                                       // total beds < population + this
+    public var greenhousesPerCapitaTarget: Double = 2.0
+    public var studentsPerSchool: Double = 12.0  // target: one school per 12 settlers
 }

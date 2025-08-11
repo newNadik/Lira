@@ -14,7 +14,7 @@ enum EventGenerator {
 
     // MARK: Exploration
     static func explorationDaily(day: Int, deltaKm: Double, totalKm: Double, state: inout SimulationState) {
-        push(String(format: "Day %d: Explored surroundings (+%.2f km, total %.2f km).", day, deltaKm, totalKm), into: &state)
+//        push(String(format: "Day %d: Explored surroundings (+%.2f km, total %.2f km).", day, deltaKm, totalKm), into: &state)
     }
 
     static func explorationMilestone(day: Int, km: Int, state: inout SimulationState) {
@@ -22,20 +22,24 @@ enum EventGenerator {
     }
 
     // MARK: Construction
-    static func constructionProgress(day: Int, kind: BuildItem.BuildKind, percent: Int, state: inout SimulationState) {
-        push("Day \(day): Construction underway: \(kind.rawValue.capitalized) \(percent)% complete.", into: &state)
+    static func constructionProgress(day: Int, displayName: String, percent: Int, state: inout SimulationState) {
+//        push("Day \(day): Construction underway: \(displayName) \(percent)% complete.", into: &state)
     }
 
-    static func builtHouse(day: Int, state: inout SimulationState) {
-        push("Day \(day): Built a House (+4 beds).", into: &state)
+    static func constructionProgress(day: Int, kind: BuildKind, percent: Int, state: inout SimulationState) {
+        constructionProgress(day: day, displayName: kind.rawValue.capitalized, percent: percent, state: &state)
     }
 
-    static func builtGreenhouse(day: Int, state: inout SimulationState) {
-        push("Day \(day): Built a Greenhouse (+food).", into: &state)
+    static func builtHouse(day: Int, state: inout SimulationState, displayName: String = "House", bedsAdded: Int) {
+        push("Day \(day): Built a \(displayName) (+\(bedsAdded) beds).", into: &state)
     }
 
-    static func openedSchool(day: Int, state: inout SimulationState) {
-        push("Day \(day): Opened a School (+Tech).", into: &state)
+    static func builtGreenhouse(day: Int, state: inout SimulationState, displayName: String = "Greenhouse") {
+        push("Day \(day): Built a \(displayName) (+food).", into: &state)
+    }
+
+    static func openedSchool(day: Int, state: inout SimulationState, displayName: String = "School") {
+        push("Day \(day): Opened a \(displayName) (+Tech).", into: &state)
     }
 
     // MARK: Science
