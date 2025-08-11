@@ -63,7 +63,7 @@ struct ContentView: View {
                 } else {
                     ForEach(vm.state.buildQueue) { item in
                         HStack {
-                            Text(item.kind.rawValue.capitalized)
+                            Text(item.displayName.capitalized)
                             Spacer()
                             Text("cost: \(Int(item.costPoints)) pts").foregroundStyle(.secondary)
                         }

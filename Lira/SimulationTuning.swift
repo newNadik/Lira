@@ -33,14 +33,14 @@ public struct SimTuning {
     public var cropVarietyRadiusScaleKm: Double = 10.0              // exploration scale for variety
 
     // MARK: Population
-    public var basePopulationGrowthRate: Double = 0.05              // births/day at ideal gates
+    public var basePopulationGrowthRate: Double = 0.15              // births/day at ideal gates
     public var starvationDeathRate: Double = 0.02                   // deaths/day if food == 0
 
     // MARK: UX thresholds
     public var minArrivalAnnouncement: Double = 0.1                 // not used now (we log on int change)
     
     // Balancing: food soft-cap & comfort growth
-    public var foodBufferTargetDays: Double = 1.2      // target rations per person
+    public var foodBufferTargetDays: Double = 1.3      // target rations per person
     public var foodSoftCapStartDays: Double = 10.0     // start damping yield above this buffer
     public var foodSoftCapStrength: Double = 0.6       // higher = stronger damping
 

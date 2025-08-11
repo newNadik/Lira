@@ -162,7 +162,7 @@ struct SimulationEngine {
                 state.buildPoints -= next.costPoints
                 switch next.kind {
                 case .house:
-                    let techMult = 1.0 + (state.technologyLevel * 0.1)
+                    let techMult = 1.0 + next.minTechLevel
                     let bedsAdded = 4.0 * techMult
                     state.housingCapacity += bedsAdded
                     EventGenerator.builtHouse(day: state.currentDayIndex, state: &state, displayName: next.displayName, bedsAdded: Int(bedsAdded))
@@ -193,7 +193,7 @@ struct SimulationEngine {
 
         // Cozy rule: no deaths; if food is zero, growth pauses.
         // Add a small comfort bonus to births when the pantry is healthy.
-        let baseBirths = tuning.basePopulationGrowthRate * state.population * capacityFactor * foodFactor
+        let baseBirths = tuning.basePopulationGrowthRate * (state.population/2) * capacityFactor * foodFactor
 
         let bufferDaysForBonus = (effectivePopulation > 0)
             ? state.foodStockRations / (effectivePopulation * tuning.rationPerPersonPerDay)
