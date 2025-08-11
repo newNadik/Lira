@@ -50,8 +50,15 @@ public struct SimulationEngine {
         let effectivePopulation = floor(state.population)
         let effectiveBeds = floor(state.housingCapacity)
         let dailyConsumption = effectivePopulation * tuning.rationPerPersonPerDay
+        
+        let previousFood = state.foodStockRations
         state.foodStockRations = max(0, state.foodStockRations + dailyYield - dailyConsumption)
-
+        let shortageToday = (state.foodStockRations == 0)
+        let shortageStarted = previousFood > 0 && shortageToday
+        if shortageStarted {
+            state.eventLog.append("Day \(state.currentDayIndex): Growth paused due to food shortage.")
+        }
+        
         let foodSurplusRatio = (dailyYield - dailyConsumption) / max(dailyConsumption, 1)
         let clampedFoodSurplus = max(-1, min(1, foodSurplusRatio))
 
@@ -96,8 +103,10 @@ public struct SimulationEngine {
         // 6) Population (gated by beds + food; integer gating)
         let capacityFactor = max(0, min(1, (effectiveBeds - effectivePopulation) / max(effectivePopulation, 1)))
         let foodFactor = max(0, min(1, 0.55 + 0.45 * clampedFoodSurplus))
-        let births = tuning.basePopulationGrowthRate * state.population * capacityFactor * foodFactor
-        let deaths = (state.foodStockRations == 0) ? tuning.starvationDeathRate * effectivePopulation : 0
+
+        // Cozy rule: no deaths; if food is zero, growth pauses instead.
+        let births = shortageToday ? 0 : (tuning.basePopulationGrowthRate * state.population * capacityFactor * foodFactor)
+        let deaths: Double = 0
 
         let previousPopulation = state.population
         state.population = max(0, state.population + births - deaths)

@@ -37,7 +37,7 @@ struct SimulationState: Codable {
     init() {
         currentDayIndex = 0
         population = 8
-        foodStockRations = 40
+        foodStockRations = 50
         housingCapacity = 12
         sciencePoints = 0
         exploredRadiusKm = 0
