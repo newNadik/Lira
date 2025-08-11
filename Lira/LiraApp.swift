@@ -165,14 +165,16 @@ struct SimulationEngine {
         let previousBuildPoints = state.buildPoints
         state.buildPoints += (tuning.baseBuildPointsPerDay + buildPointGainFromExercise) * (1 + tuning.buildTechBonusPerLevel * state.technologyLevel)
 
-        // Track progress milestones at 25%, 50%, 75%
+        // Track progress milestones at 25%, 50%, 75% for only the first build item in the queue
         let progressMilestones: [Double] = [0.25, 0.5, 0.75]
         var milestonesForToday = constructionProgressMilestones // local copy for this day
-        for next in state.buildQueue {
+        if let next = state.buildQueue.first {
+            let prevRatio = previousBuildPoints / next.costPoints
             let progressRatio = state.buildPoints / next.costPoints
             let milestonesHit = milestonesForToday[next.id] ?? Set<Double>()
             for milestone in progressMilestones {
-                if progressRatio >= milestone && !milestonesHit.contains(milestone) && progressRatio < 1.0 {
+                // Only fire event if milestone was just crossed this day (previously below, now at or above)
+                if prevRatio < milestone && progressRatio >= milestone && progressRatio < 1.0 && !milestonesHit.contains(milestone) {
                     state.eventLog.append("Day \(state.currentDayIndex): Construction underway: \(next.kind.rawValue.capitalized) is \(Int(milestone * 100))% complete.")
                     var updatedSet = milestonesHit
                     updatedSet.insert(milestone)
@@ -182,7 +184,8 @@ struct SimulationEngine {
         }
         constructionProgressMilestones = milestonesForToday
 
-        while let next = state.buildQueue.first, state.buildPoints >= next.costPoints {
+        // Only complete at most one build per day
+        if let next = state.buildQueue.first, state.buildPoints >= next.costPoints {
             state.buildPoints -= next.costPoints
             switch next.kind {
             case .house:
@@ -225,6 +228,11 @@ struct SimulationEngine {
         }
         if deaths > 0 {
             state.eventLog.append("Day \(state.currentDayIndex): Hard day. Starvation affected the colony.")
+        }
+
+        // Trim event log to latest 500 entries
+        if state.eventLog.count > 500 {
+            state.eventLog = Array(state.eventLog.suffix(500))
         }
     }
 }
@@ -276,7 +284,7 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Planet Lira • Day \(vm.state.currentDayIndex)")
+            .navigationTitle("Planet Lira • Day \(vm.state.currentDayIndex + 1)")
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
