@@ -35,12 +35,11 @@ public struct SimulationEngine {
         let prevKm = Int(floor(previousExplored))
         let newKm = Int(floor(state.exploredRadiusKm))
         if newKm > prevKm {
-            state.eventLog.append("Day \(state.currentDayIndex): Scouted out to \(newKm) km.")
+            EventGenerator.explorationMilestone(day: state.currentDayIndex, km: newKm, state: &state)
         }
         // Daily exploration ping
         let deltaKm = max(0, state.exploredRadiusKm - previousExplored)
-        state.eventLog.append(String(format: "Day %d: Explored surroundings (+%.2f km, total %.2f km).",
-                                     state.currentDayIndex, deltaKm, state.exploredRadiusKm))
+        EventGenerator.explorationDaily(day: state.currentDayIndex, deltaKm: deltaKm, totalKm: state.exploredRadiusKm, state: &state)
 
         // 3) Food production and consumption (use integer-effective counts)
         let cropVarietyMultiplier = 1 + tuning.cropVarietyMaxUplift * (1 - exp(-state.exploredRadiusKm / tuning.cropVarietyRadiusScaleKm))
@@ -56,7 +55,7 @@ public struct SimulationEngine {
         let shortageToday = (state.foodStockRations == 0)
         let shortageStarted = previousFood > 0 && shortageToday
         if shortageStarted {
-            state.eventLog.append("Day \(state.currentDayIndex): Growth paused due to food shortage.")
+            EventGenerator.growthPausedForFood(day: state.currentDayIndex, state: &state)
         }
         
         let foodSurplusRatio = (dailyYield - dailyConsumption) / max(dailyConsumption, 1)
@@ -71,7 +70,7 @@ public struct SimulationEngine {
             let newRatio  = state.buildPoints     / max(next.costPoints, 0.0001)
             let milestones: [Double] = [0.25, 0.5, 0.75]
             for milestone in milestones where prevRatio < milestone && newRatio >= milestone {
-                state.eventLog.append("Day \(state.currentDayIndex): Construction underway: \(next.kind.rawValue.capitalized) \(Int(milestone * 100))% complete.")
+                EventGenerator.constructionProgress(day: state.currentDayIndex, kind: next.kind, percent: Int(milestone * 100), state: &state)
             }
 
             if state.buildPoints >= next.costPoints {
@@ -79,13 +78,13 @@ public struct SimulationEngine {
                 switch next.kind {
                 case .house:
                     state.housingCapacity += 4
-                    state.eventLog.append("Day \(state.currentDayIndex): Built a House (+4 beds).")
+                    EventGenerator.builtHouse(day: state.currentDayIndex, state: &state)
                 case .greenhouse:
                     state.greenhouseCount += 1
-                    state.eventLog.append("Day \(state.currentDayIndex): Built a Greenhouse (+food).")
+                    EventGenerator.builtGreenhouse(day: state.currentDayIndex, state: &state)
                 case .school:
                     state.technologyLevel += 0.5
-                    state.eventLog.append("Day \(state.currentDayIndex): Opened a School (+Tech).")
+                    EventGenerator.openedSchool(day: state.currentDayIndex, state: &state)
                 }
                 _ = state.buildQueue.removeFirst()
                 // Only one completion per day; do not attempt additional builds today.
@@ -97,7 +96,7 @@ public struct SimulationEngine {
         if state.sciencePoints >= tuning.scienceBreakthroughThreshold {
             state.sciencePoints -= tuning.scienceBreakthroughThreshold
             state.technologyLevel += 1
-            state.eventLog.append("Day \(state.currentDayIndex): Breakthrough! Tech is now \(Int(state.technologyLevel)).")
+            EventGenerator.breakthrough(day: state.currentDayIndex, techLevel: Int(state.technologyLevel), state: &state)
         }
 
         // 6) Population (gated by beds + food; integer gating)
@@ -113,15 +112,7 @@ public struct SimulationEngine {
 
         if floor(state.population) > floor(previousPopulation) {
             let delta = Int(floor(state.population) - floor(previousPopulation))
-            state.eventLog.append("Day \(state.currentDayIndex): New arrivals: +\(delta) Liri.")
-        }
-        if deaths > 0 {
-            state.eventLog.append("Day \(state.currentDayIndex): Hard day. Starvation affected the colony.")
-        }
-
-        // Trim log to last 500 entries
-        if state.eventLog.count > 500 {
-            state.eventLog.removeFirst(state.eventLog.count - 500)
+            EventGenerator.arrivals(day: state.currentDayIndex, count: delta, state: &state)
         }
     }
 }
