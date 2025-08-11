@@ -1,8 +1,8 @@
 import Foundation
 
-public struct SimulationEngine {
-    public var tuning = SimTuning()
-    public init() {}
+struct SimulationEngine {
+    var tuning = SimTuning()
+    init() {}
 
     mutating func advanceOneDay(state: inout SimulationState,
                                        health: DailyHealthMetrics? = .zero,
@@ -74,6 +74,14 @@ public struct SimulationEngine {
         let foodSurplusRatio = (dailyYield - dailyConsumption) / max(dailyConsumption, 1)
         let clampedFoodSurplus = max(-1, min(1, foodSurplusRatio))
 
+        // Surplus/Deficit event
+        let netFood = dailyYield - dailyConsumption
+        if netFood > 2 { // modest threshold
+            EventGenerator.foodSurplus(day: state.currentDayIndex, surplus: Int(netFood.rounded()), state: &state)
+        } else if netFood < -2 {
+            EventGenerator.generalInfo(day: state.currentDayIndex, message: "Food deficit today (~\(Int((-netFood).rounded())) rations)", state: &state)
+        }
+
         // 4) Building (passive + exercise + tech bonus)
         // Use buffer days (rations per person) to decide priorities
         let effectivePop = max(1.0, floor(state.population))
@@ -87,6 +95,11 @@ public struct SimulationEngine {
 
         let bufferDays = state.foodStockRations / dailyConsumptionCheck
         let freeBeds = Int(floor(state.housingCapacity - effectivePop))
+
+        // Capacity event
+        if freeBeds <= 0 {
+            EventGenerator.populationCapReached(day: state.currentDayIndex, state: &state)
+        }
 
         // Eligible specs by tech
         let eligible = Config.buildingCatalog.filter { $0.minTechLevel <= state.technologyLevel }
@@ -115,6 +128,7 @@ public struct SimulationEngine {
                 }
 
                 // No current need → don't enqueue anything.
+                EventGenerator.idleBuilders(day: state.currentDayIndex, state: &state)
                 return nil
             }()
 
@@ -128,8 +142,7 @@ public struct SimulationEngine {
                                  costPoints: spec.costPoints,
                                  minTechLevel: spec.minTechLevel)
                     )
-                    // Optional planning log:
-                    // EventGenerator.constructionPlanned(day: state.currentDayIndex, displayName: spec.displayName, state: &state)
+                    EventGenerator.constructionPlanned(day: state.currentDayIndex, name: spec.displayName, state: &state)
                 }
             }
         }
@@ -149,8 +162,8 @@ public struct SimulationEngine {
                 state.buildPoints -= next.costPoints
                 switch next.kind {
                 case .house:
-                    let techMult = max(1.0, next.minTechLevel)
-                    let bedsAdded = 4.0 * techMult   // 4 beds baseline, scaled by tech
+                    let techMult = 1.0 + (state.technologyLevel * 0.1)
+                    let bedsAdded = 4.0 * techMult
                     state.housingCapacity += bedsAdded
                     EventGenerator.builtHouse(day: state.currentDayIndex, state: &state, displayName: next.displayName, bedsAdded: Int(bedsAdded))
                 case .greenhouse:
