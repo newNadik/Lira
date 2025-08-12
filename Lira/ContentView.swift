@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var vm = SimulationViewModel()
+    @StateObject private var hk = HealthKitManager()
 
     var body: some View {
         NavigationView {
@@ -21,6 +22,14 @@ struct ContentView: View {
                 .padding()
             }
             .navigationTitle("Planet Lira • Day \(vm.state.currentDayIndex + 1)")
+        }
+        .onReceive(hk.$snapshot) { snap in
+            vm.metrics = DailyHealthMetrics(
+                steps: snap.stepsToday,
+                daylightMinutes: snap.daylightMinutesToday,
+                exerciseMinutes: snap.exerciseMinutesToday,
+                sleepHours: snap.sleepHoursPrevNight
+            )
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
@@ -51,9 +60,46 @@ struct ContentView: View {
     private var inputsSection: some View {
         GroupBox("Inputs") {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Health data: not connected (using ZERO baseline)")
-                    .foregroundStyle(.secondary)
-                Text("Dev time: one day passes every \(Int(Config.tickInterval)) seconds while the app is open.")
+                if Config.isDevMode {
+                    Text("Dev mode: using simulated ZERO inputs")
+                        .foregroundStyle(.secondary)
+                } else {
+                    if #available(iOS 17.0, *) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Button("Connect Health") { hk.requestAuthorization() }
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text("Steps")
+                                    Spacer()
+                                    Text("\(Int(hk.snapshot.stepsToday))")
+                                }
+                                HStack {
+                                    Text("Exercise")
+                                    Spacer()
+                                    Text("\(Int(hk.snapshot.exerciseMinutesToday)) min")
+                                }
+                                HStack {
+                                    Text("Daylight")
+                                    Spacer()
+                                    Text("\(Int(hk.snapshot.daylightMinutesToday)) min")
+                                }
+                                HStack {
+                                    Text("Sleep")
+                                    Spacer()
+                                    let hours = Int(hk.snapshot.sleepHoursPrevNight)
+                                    let minutes = Int((hk.snapshot.sleepHoursPrevNight - Double(hours)) * 60)
+                                    Text("\(hours)h \(minutes)m")
+                                }
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("Requires iOS 17+ for daylight. Health inputs disabled.")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Text("One game day equals one real day. Progress accrues while the app is closed.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -89,8 +135,8 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(vm.state.eventLog.reversed().prefix(120), id: \.self) { line in
-                        Text(line).font(.callout)
+                    ForEach(Array(vm.state.eventLog.enumerated().reversed().prefix(120)), id: \.offset) { item in
+                        Text(item.element).font(.callout)
                     }
                 }
             }
