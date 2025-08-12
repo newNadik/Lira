@@ -90,6 +90,10 @@ enum EventGenerator {
     static func constructionPlanned(day: Int, name: String, state: inout SimulationState) {
         push("Day \(day): Queued: \(name).", into: &state)
     }
+
+    static func constructionStarted(day: Int, name: String, days: Int, state: inout SimulationState) {
+        push("Day \(day): Started building \(name), estimated \(days) days to complete.", into: &state)
+    }
     
     static func researchProgress(day: Int, percent: Int, state: inout SimulationState) {
         push("Day \(day): Research is advancing — \(percent)% complete.", into: &state)

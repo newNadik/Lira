@@ -43,12 +43,16 @@ struct SimulationState: Codable {
     var schoolCount: Double
     var buildPoints: Double
     var buildQueue: [Building]
+    var activeBuild: Building?
+    var activeBuildTotalDays: Int
+    var activeBuildDaysRemaining: Int
+        
     var eventLog: [String]
 
     init() {
         currentDayIndex = 0
         population = 8
-        foodStockRations = 50
+        foodStockRations = 55
         housingCapacity = 12
         sciencePoints = 0
         exploredRadiusKm = 0
@@ -58,5 +62,8 @@ struct SimulationState: Codable {
         schoolCount = 0
         buildQueue = []
         eventLog = []
+        activeBuild = nil
+        activeBuildTotalDays = 0
+        activeBuildDaysRemaining = 0
     }
 }

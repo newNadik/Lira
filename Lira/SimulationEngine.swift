@@ -149,34 +149,49 @@ struct SimulationEngine {
         
         state.buildPoints += (tuning.baseBuildPointsPerDay + buildPointGainFromExercise) * (1 + tuning.buildTechBonusPerLevel * state.technologyLevel)
 
-        // Progress milestones only for the first item; at most one completion/day
-        if let next = state.buildQueue.first {
-            let prevRatio = previousBuildPoints / max(next.costPoints, 0.0001)
-            let newRatio  = state.buildPoints     / max(next.costPoints, 0.0001)
-            let milestones: [Double] = [0.25, 0.5, 0.75]
-            for milestone in milestones where prevRatio < milestone && newRatio >= milestone {
-                EventGenerator.constructionProgress(day: state.currentDayIndex, kind: next.kind, percent: Int(milestone * 100), state: &state)
+        // If we have an active build, advance it by days; otherwise try to start one
+        if let active = state.activeBuild {
+            // Advance day-based construction
+            let total = max(1, state.activeBuildTotalDays)
+            let before = state.activeBuildDaysRemaining
+            state.activeBuildDaysRemaining = max(0, state.activeBuildDaysRemaining - 1)
+            let after = state.activeBuildDaysRemaining
+
+            // Progress milestones at 25/50/75% based on days elapsed
+            let completedFracBefore = 1.0 - (Double(before) / Double(total))
+            let completedFracAfter  = 1.0 - (Double(after)  / Double(total))
+            for m in [0.25, 0.5, 0.75] where completedFracBefore < m && completedFracAfter >= m {
+                EventGenerator.constructionProgress(day: state.currentDayIndex, displayName: active.displayName, percent: Int(m * 100), state: &state)
             }
 
-            if state.buildPoints >= next.costPoints {
-                state.buildPoints -= next.costPoints
-                switch next.kind {
+            // Finish when remaining hits zero
+            if state.activeBuildDaysRemaining == 0 {
+                switch active.kind {
                 case .house:
-                    let techMult = 1.0 + next.minTechLevel
+                    let techMult = 1.0 + active.minTechLevel
                     let bedsAdded = 4.0 * techMult
                     state.housingCapacity += bedsAdded
-                    EventGenerator.builtHouse(day: state.currentDayIndex, state: &state, displayName: next.displayName, bedsAdded: Int(bedsAdded))
+                    EventGenerator.builtHouse(day: state.currentDayIndex, state: &state, displayName: active.displayName, bedsAdded: Int(bedsAdded))
                 case .greenhouse:
                     state.greenhouseCount += 1
-                    EventGenerator.builtGreenhouse(day: state.currentDayIndex, state: &state, displayName: next.displayName)
+                    EventGenerator.builtGreenhouse(day: state.currentDayIndex, state: &state, displayName: active.displayName)
                 case .school:
                     state.technologyLevel += 0.5
                     state.schoolCount += 1
-                    EventGenerator.openedSchool(day: state.currentDayIndex, state: &state, displayName: next.displayName)
+                    EventGenerator.openedSchool(day: state.currentDayIndex, state: &state, displayName: active.displayName)
                 }
-                _ = state.buildQueue.removeFirst()
-                // Only one completion per day; do not attempt additional builds today.
+                state.activeBuild = nil
+                state.activeBuildTotalDays = 0
             }
+        } else if let next = state.buildQueue.first, state.buildPoints >= next.costPoints {
+            // Start a new construction using days based on required tech
+            state.buildPoints -= next.costPoints
+            let totalDays = Int(max(1.0, next.minTechLevel))
+            state.activeBuild = next
+            state.activeBuildDaysRemaining = totalDays
+            state.activeBuildTotalDays = totalDays
+            EventGenerator.constructionStarted(day: state.currentDayIndex, name: next.displayName, days: totalDays, state: &state)
+            _ = state.buildQueue.removeFirst()
         }
 
         // 5) Science (passive + sleep + tech bonus)

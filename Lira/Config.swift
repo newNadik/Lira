@@ -1,7 +1,7 @@
 import Foundation
 
 struct Config {
-    static let tickIntervalSecDev: TimeInterval = 1.0       // 1 day = 3s (DEV)
+    static let tickIntervalSecDev: TimeInterval = 3.0       // 1 day = 3s (DEV)
     static let tickIntervalSecProd: TimeInterval = 86_400.0 // 1 day = 24h (PROD)
     static let isDevMode: Bool = true
     
