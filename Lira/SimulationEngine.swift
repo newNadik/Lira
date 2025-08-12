@@ -16,7 +16,7 @@ struct SimulationEngine {
         }()
 
         // Advance exactly one full in-game day.
-        advanceFractionOfDay(state: &state, healthDeltas: m, fractionOfDay: 1.0, emitDailySummary: true)
+        advanceFractionOfDay(state: &state, healthDeltas: m, fractionOfDay: 1.0, emitDailySummary: false)
     }
 
     // MARK: - Real-time friendly partial-day advance
@@ -63,8 +63,9 @@ struct SimulationEngine {
         }
         // Live exploration ping (lightweight)
         let deltaKm = max(0, state.exploredRadiusKm - previousExplored)
-        EventGenerator.explorationDaily(day: state.currentDayIndex, deltaKm: deltaKm, totalKm: state.exploredRadiusKm, state: &state)
-
+        if Int(deltaKm) > 0 {
+            EventGenerator.explorationDaily(day: state.currentDayIndex, deltaKm: deltaKm, totalKm: state.exploredRadiusKm, state: &state)
+        }
         // 3) Food production and consumption (scale daily rates by f)
         let cropVarietyMultiplier = 1 + tuning.cropVarietyMaxUplift * (1 - exp(-state.exploredRadiusKm / tuning.cropVarietyRadiusScaleKm))
         let yieldPerGreenhouse = tuning.baseYieldPerGreenhouse * (1 + tuning.yieldTechBonusPerLevel * state.technologyLevel) * cropVarietyMultiplier

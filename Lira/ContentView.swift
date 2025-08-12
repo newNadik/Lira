@@ -12,6 +12,11 @@ struct ContentView: View {
                     inputsSection
                     buildQueueSection
                     logSection
+                    Button("Reset Simulation") {
+                        vm.reset()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .padding()
             }
