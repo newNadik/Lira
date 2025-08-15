@@ -21,7 +21,7 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Planet Lira • Day \(vm.state.currentDayIndex + 1)")
+            .navigationTitle("Planet Lira • Day \(vm.state.currentDayIndex)")
         }
         .onReceive(hk.$snapshot) { snap in
             vm.metrics = DailyHealthMetrics(

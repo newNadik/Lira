@@ -12,7 +12,7 @@ struct Config {
     /// Default starter plans for a fresh colony.
     static var initialBuildQueue: [Building] {
         [
-            Building(kind: .greenhouse, displayName: "Greenhouse",     costPoints: 20, minTechLevel: 0.0)
+            Building(kind: .greenhouse, displayName: "Greenhouse",     costPoints: 15, minTechLevel: 0.0)
         ]
     }
     

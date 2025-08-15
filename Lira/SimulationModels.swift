@@ -50,14 +50,14 @@ struct SimulationState: Codable {
     var eventLog: [String]
 
     init() {
-        currentDayIndex = 0
+        currentDayIndex = 1
         population = 8
         foodStockRations = 55
         housingCapacity = 12
         sciencePoints = 0
         exploredRadiusKm = 0
         technologyLevel = 0
-        buildPoints = 0
+        buildPoints = 10
         greenhouseCount = 1
         schoolCount = 0
         buildQueue = []
