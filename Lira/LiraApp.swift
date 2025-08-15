@@ -25,6 +25,13 @@ struct LiraApp: App {
                         onFinished: { showCurtain = false }
                     )
                 }
+                
+                Image("grain")
+                    .resizable(resizingMode: .tile)
+                    .ignoresSafeArea()
+                    .blendMode(.overlay)
+                    .opacity(0.9)
+                    .allowsHitTesting(false)
             }
         }
     }
