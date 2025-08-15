@@ -13,7 +13,7 @@ struct LiraApp: App {
                 } else {
                     SplashView()
                 }
-
+                
                 if showCurtain {
                     CloudCurtainOverlay(
                         leftFront:  "clouds_left_front",
@@ -32,6 +32,12 @@ struct LiraApp: App {
                     .blendMode(.overlay)
                     .opacity(0.9)
                     .allowsHitTesting(false)
+                
+//                DayNightOverlay()
+//                    .ignoresSafeArea()
+//                    .blendMode(.overlay) // overlay or .multiply if you want stronger tinting
+//                    .allowsHitTesting(false)
+                
             }
         }
     }

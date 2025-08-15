@@ -17,6 +17,7 @@ struct MainSceneView: View {
             HealthHUDView()
                 .padding(.top, 16)
                 .padding(.horizontal, 10)
+            
         }
     }
 }
