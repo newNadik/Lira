@@ -9,7 +9,14 @@ struct MainSceneView: View {
     )
 
     var body: some View {
-        SpriteView(scene: scene, preferredFramesPerSecond: 60, options: [.ignoresSiblingOrder])
-            .ignoresSafeArea()
+
+        ZStack(alignment: .top) {
+            SpriteView(scene: scene, preferredFramesPerSecond: 60, options: [.ignoresSiblingOrder])
+                .ignoresSafeArea()
+
+            HealthHUDView()
+                .padding(.top, 16)
+                .padding(.horizontal, 10)
+        }
     }
 }
