@@ -142,7 +142,7 @@ struct SettlementStatsPopup: View {
         // Show up to one decimal for non-int values
         let f = NumberFormatter()
         f.minimumFractionDigits = 0
-        f.maximumFractionDigits = 1
+        f.maximumFractionDigits = 2
         return f.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }

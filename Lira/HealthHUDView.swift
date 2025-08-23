@@ -2,7 +2,7 @@ import SwiftUI
 
 struct HealthHUDView: View {
     
-    @StateObject private var hk = HealthKitManager()
+    @ObservedObject var hk: HealthKitManager
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     
@@ -103,7 +103,7 @@ struct HealthHUDView_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            HealthHUDView()
+            HealthHUDView(hk: HealthKitManager())
                 .padding(.top, 16)
                 .padding(.horizontal, 16)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

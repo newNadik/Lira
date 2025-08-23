@@ -2,8 +2,9 @@ import SwiftUI
 import SpriteKit
 
 struct MainSceneView: View {
-
+    
     @StateObject private var vm = SimulationViewModel()
+    @StateObject private var hk = HealthKitManager()
     @State private var showStats = false
     
     @State private var scene = ScrollableBackgroundScene(
@@ -18,7 +19,7 @@ struct MainSceneView: View {
                 .ignoresSafeArea()
 
             VStack(alignment: .trailing) {
-                HealthHUDView()
+                HealthHUDView(hk: hk)
                     .padding(.top, 16)
                     .padding(.horizontal, 10)
                 
@@ -53,6 +54,14 @@ struct MainSceneView: View {
                     .transition(.scale.combined(with: .opacity))
                     .animation(.spring(response: 0.35, dampingFraction: 0.9), value: showStats)
             }
+        }
+        .onReceive(hk.$snapshot) { snap in
+            vm.metrics = DailyHealthMetrics(
+                steps: snap.stepsToday,
+                daylightMinutes: snap.daylightMinutesToday,
+                exerciseMinutes: snap.exerciseMinutesToday,
+                sleepHours: snap.sleepHoursPrevNight
+            )
         }
     }
 }
