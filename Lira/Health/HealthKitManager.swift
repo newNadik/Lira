@@ -7,6 +7,13 @@ public final class HealthKitManager: ObservableObject {
     @Published public private(set) var snapshot: HealthSnapshot = .zero
     @Published public private(set) var authState: HealthAuthState = .notDetermined
 
+    private var observers: [HKObserverQuery] = []
+
+    /// Convenience: true if HealthKit is authorized for our requested types
+    public var isAnyAuthorized: Bool {
+        authState == .authorized
+    }
+
     private let store = HKHealthStore()
 
     private let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
@@ -34,6 +41,26 @@ public final class HealthKitManager: ObservableObject {
                 self.authState = ok ? .authorized : .denied
                 if ok { self.refreshAll(); self.startObservers() }
             }
+        }
+    }
+    
+    public func requestAuthorizationAndStartQueries() {
+        requestAuthorization()
+    }
+    
+    public func disconnect() {
+        // Stop active observer queries
+        for q in observers { store.stop(q) }
+        observers.removeAll()
+
+        // Disable all background deliveries
+        store.disableAllBackgroundDelivery { _, _ in }
+
+        // Reset UI-facing state
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.snapshot = .zero
+            self.authState = .notDetermined
         }
     }
 
@@ -117,6 +144,7 @@ public final class HealthKitManager: ObservableObject {
             self?.refreshAll()
             completion()
         }
+        observers.append(obs)
         store.execute(obs)
         store.enableBackgroundDelivery(for: type, frequency: .immediate) { _, _ in }
     }

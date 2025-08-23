@@ -7,6 +7,7 @@ struct MainSceneView: View {
     @StateObject private var hk = HealthKitManager()
     @State private var showStats = false
     @State private var showJournal = false
+    @State private var showSettings = false
     
     @State private var scene = ScrollableBackgroundScene(
         size: UIScreen.main.bounds.size,
@@ -20,10 +21,16 @@ struct MainSceneView: View {
                 .ignoresSafeArea()
 
             VStack(alignment: .trailing) {
-                HealthHUDView(hk: hk)
-                    .padding(.top, 16)
-                    .padding(.horizontal, 10)
-
+                Text("• Day \(vm.state.currentDayIndex)")
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
+                    .foregroundColor(Color("brown"))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                
+                if (hk.isAnyAuthorized) {
+                    HealthHUDView(hk: hk)
+                        .padding(.horizontal, 10)
+                }
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 10) {
@@ -54,7 +61,22 @@ struct MainSceneView: View {
                     }
                     .buttonStyle(IconChipButtonStyle())
                     .accessibilityLabel("Open settlement stats")
+
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9, blendDuration: 0.2)) {
+                            showSettings.toggle()
+                        }
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Image("settings_icon")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(5)
+                    }
+                    .buttonStyle(IconChipButtonStyle())
+                    .accessibilityLabel("Open settings")
                 }
+                .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 16)
                 .padding(.bottom, 10)
                 .padding(.trailing, 10)
@@ -70,6 +92,34 @@ struct MainSceneView: View {
                     .padding(20)
                     .transition(.scale.combined(with: .opacity))
                     .animation(.spring(response: 0.35, dampingFraction: 0.9), value: showJournal)
+            }
+
+            if showSettings {
+                Color.black.opacity(0.28)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .onTapGesture { withAnimation { showSettings = false } }
+
+                SettingsPopup(
+                    isMuted: (UserDefaults.standard.object(forKey: "audio.musicMuted") as? Bool) ?? false,
+                    appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
+                    buildNumber: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "",
+                    healthAuthorized: hk.isAnyAuthorized,
+                    onToggleMute: { newValue in
+                        UserDefaults.standard.set(newValue, forKey: "audio.musicMuted")
+                        NotificationCenter.default.post(name: .bgmMuteChanged, object: nil, userInfo: ["muted": newValue])
+                    },
+                    onConnectHealth: {
+                        hk.requestAuthorization()
+                    },
+                    onDisconnectHealth: {
+                        hk.disconnect()
+                    },
+                    onClose: { withAnimation { showSettings = false } }
+                )
+                .padding(20)
+                .transition(.scale.combined(with: .opacity))
+                .animation(.spring(response: 0.35, dampingFraction: 0.9), value: showSettings)
             }
 
             if showStats {

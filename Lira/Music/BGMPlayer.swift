@@ -2,6 +2,10 @@ import SwiftUI
 import AVFoundation
 
 final class BGMPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
+    override init() {
+        super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(handleMuteChanged(_:)), name: .bgmMuteChanged, object: nil)
+    }
     private var playlist: [URL] = []
     private var currentIndex: Int = 0
     private var player: AVAudioPlayer?
@@ -78,6 +82,13 @@ final class BGMPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         UserDefaults.standard.set(muted, forKey: musicMutedKey)
         let target: Float = muted ? 0.0 : musicVolume
         if animated { fade(to: target, duration: fadeDuration) } else { player?.volume = target }
+        // Broadcast so Settings UI (or others) can sync
+        NotificationCenter.default.post(name: .bgmMuteChanged, object: nil, userInfo: ["muted": muted])
+    }
+    @objc private func handleMuteChanged(_ note: Notification) {
+        guard let muted = note.userInfo?["muted"] as? Bool else { return }
+        // Avoid redundant work
+        if muted != isMuted { setMuted(muted) }
     }
 
     /// Set music volume (0.0...1.0). If currently muted, the stored value updates but output stays 0 until unmuted.
@@ -160,5 +171,8 @@ final class BGMPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
-    deinit { fadeTimer?.invalidate() }
+    deinit {
+        fadeTimer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
+    }
 }

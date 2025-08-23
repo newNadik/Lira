@@ -67,6 +67,13 @@ final class SimulationViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Listen for reset notification
+        NotificationCenter.default.publisher(for: .gameResetRequested)
+            .sink { [weak self] _ in
+                self?.reset()
+            }
+            .store(in: &cancellables)
+
         // Immediate catch-up on launch so we don't wait for the first timer tick
         if !Config.isDevMode {
             let now = Date()
