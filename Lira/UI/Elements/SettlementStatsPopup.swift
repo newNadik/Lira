@@ -38,10 +38,18 @@ struct SettlementStatsPopup: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Label("Settlement Overview", systemImage: "building.2.crop.circle")
-                    .font(.headline)
-                    .foregroundColor(Color("brown"))
+                HStack(spacing: 6) {
+                    Image("stats_icon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)   // keep it small, like the HUD icons
+                    Text("Settlement Overview")
+                        .font(.headline)
+                        .foregroundColor(Color("brown"))
+                }
+
                 Spacer()
+
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 16, weight: .bold, design: .rounded))
