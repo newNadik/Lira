@@ -9,7 +9,7 @@ struct SoftPillButtonStyle: ButtonStyle {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(configuration.isPressed ? Color("beige").opacity(0.85) : Color("beige"))
+                    .fill(Color("beige"))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
