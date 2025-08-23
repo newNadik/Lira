@@ -71,7 +71,7 @@ struct HealthStatCard: View {
             Image(iconName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 25, height: 25)
+                .frame(width: 25, height: 30)
             
             Text(valueText)
                 .font(.system(size: 14, weight: .bold, design: .rounded))

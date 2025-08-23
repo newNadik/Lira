@@ -21,11 +21,29 @@ struct MainSceneView: View {
                 .ignoresSafeArea()
 
             VStack(alignment: .trailing) {
-                Text("• Day \(vm.state.currentDayIndex)")
-                    .font(.system(size: 24, weight: .heavy, design: .rounded))
-                    .foregroundColor(Color("brown"))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
+                HStack{
+                    Text("• Day \(vm.state.currentDayIndex)")
+                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .foregroundColor(Color("brown"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Spacer()
+                    
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9, blendDuration: 0.2)) {
+                            showSettings.toggle()
+                        }
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Image("settings_icon")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(5)
+                    }
+                    .buttonStyle(IconChipButtonStyle())
+                    .accessibilityLabel("Open settings")
+                }
+                .padding(.horizontal, 10)
                 
                 if (hk.isAnyAuthorized) {
                     HealthHUDView(hk: hk)
@@ -61,20 +79,6 @@ struct MainSceneView: View {
                     }
                     .buttonStyle(IconChipButtonStyle())
                     .accessibilityLabel("Open settlement stats")
-
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9, blendDuration: 0.2)) {
-                            showSettings.toggle()
-                        }
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    } label: {
-                        Image("settings_icon")
-                            .resizable()
-                            .scaledToFit()
-                            .padding(5)
-                    }
-                    .buttonStyle(IconChipButtonStyle())
-                    .accessibilityLabel("Open settings")
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 16)
