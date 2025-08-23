@@ -1,37 +1,14 @@
 import SwiftUI
 
 struct SettlementStatsPopup: View {
-    struct StateSnapshot {
-        let population: Double
-        let housingCapacity: Double
-        let foodStockRations: Double
-        let greenhouseCount: Double
-        let technologyLevel: Double
-        let exploredRadiusKm: Double
-        let buildPoints: Double
-        let sciencePoints: Double
-        let schoolCount: Double
-        let currentDayIndex: Int
-    }
 
     // Accept a strongly-typed state. If your vm.state is a custom type,
     // you can add an init to map it to this snapshot.
-    let state: StateSnapshot
+    let state: SimulationState
     var onClose: () -> Void
 
     init(state: SimulationState, onClose: @escaping () -> Void) {
-        self.state = .init(
-            population: state.population,
-            housingCapacity: state.housingCapacity,
-            foodStockRations: state.foodStockRations,
-            greenhouseCount: state.greenhouseCount,
-            technologyLevel: state.technologyLevel,
-            exploredRadiusKm: state.exploredRadiusKm,
-            buildPoints: state.buildPoints,
-            sciencePoints: state.sciencePoints,
-            schoolCount: state.schoolCount,
-            currentDayIndex: state.currentDayIndex
-        )
+        self.state = state
         self.onClose = onClose
     }
 
@@ -84,7 +61,7 @@ struct SettlementStatsPopup: View {
                         gridRow("Science points", value: state.sciencePoints)
                     }
                     StatsSection(title: "Explored Area") {
-                        gridRow("Explored radius (km)", value: state.exploredRadiusKm)
+                        gridRow("Explored radius", value: state.exploredRadiusKm, unit: "km", metersIfSmall: true)
                     }
                 }
                 .padding(.top, 4)
@@ -123,7 +100,7 @@ struct SettlementStatsPopup: View {
     }
 
     @ViewBuilder
-    private func gridRow(_ title: String, value: Double, asInt: Bool = false) -> some View {
+    private func gridRow(_ title: String, value: Double, asInt: Bool = false, unit: String? = nil, metersIfSmall: Bool = false) -> some View {
         HStack(spacing: 8) {
             Text(title)
                 .font(.system(size: 14, weight: .regular, design: .rounded))
@@ -131,7 +108,7 @@ struct SettlementStatsPopup: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Spacer(minLength: 12)
-            Text(format(value, asInt: asInt))
+            Text(formatWithUnit(value, asInt: asInt, unit: unit, metersIfSmall: metersIfSmall))
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .foregroundColor(Color("brown"))
@@ -152,5 +129,23 @@ struct SettlementStatsPopup: View {
         f.minimumFractionDigits = 0
         f.maximumFractionDigits = 2
         return f.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
+    private func formatWithUnit(_ value: Double, asInt: Bool, unit: String?, metersIfSmall: Bool) -> String {
+        var displayValue = value
+        var displayUnit = unit ?? ""
+
+        if metersIfSmall, value < 1.0 {
+            displayValue = value * 1000.0
+            displayUnit = "m"
+            return "\(Int(displayValue.rounded())) \(displayUnit)"
+        }
+
+        let base = format(displayValue, asInt: asInt)
+        if !displayUnit.isEmpty {
+            return "\(base) \(displayUnit)"
+        } else {
+            return base
+        }
     }
 }
