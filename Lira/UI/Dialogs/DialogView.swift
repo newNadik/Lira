@@ -48,7 +48,7 @@ struct DialogView: View {
                     }
                     
                     // Main text box
-                    TokenText(line.text)
+                    InlineImageText(text: line.text, imageSize: 27, imageBaselineOffset: -7, textColor: UIColor(named: "brown") ?? .black)
                         .padding(15)
                         .padding(.bottom, 16)
                         .background(
