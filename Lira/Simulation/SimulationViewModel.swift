@@ -182,7 +182,11 @@ final class SimulationViewModel: ObservableObject {
 
     func stopDevTimer() { timer?.invalidate(); timer = nil }
     func advanceOneDay() { engine.advanceOneDay(state: &state, health: metrics) }
-    func reset() { state = SimulationState(); state.buildQueue = Config.initialBuildQueue }
+    func reset() {
+        state = SimulationState()
+        state.buildQueue = Config.initialBuildQueue
+        UserDefaults.standard.set(false, forKey: "intro.seen")
+    }
 
     private func saveState(_ s: SimulationState) {
         if let data = try? JSONEncoder().encode(s) {

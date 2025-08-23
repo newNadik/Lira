@@ -51,6 +51,7 @@ struct DialogView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color("brown"), lineWidth: 3)
                     )
+                    .shadow(color: Color("brown").opacity(0.2), radius: 3, x: 1, y: 2)
                 
                 HStack(spacing: 8) {
                     Spacer()
@@ -60,12 +61,14 @@ struct DialogView: View {
                             .buttonStyle(SoftPillButtonStyle())
                             .keyboardShortcut(.defaultAction)
                             .frame(height: 40)
+                            .shadow(color: Color("brown").opacity(0.2), radius: 3, x: 1, y: 2)
                     } else {
                         ForEach(line.buttons) { choice in
                             Button(choice.title) { onChoice(choice) }
                                 .buttonStyle(SoftPillButtonStyle())
                                 .keyboardShortcut(choice.role == .primary ? .defaultAction : .cancelAction)
                                 .frame(height: 40)
+                                .shadow(color: Color("brown").opacity(0.2), radius: 3, x: 1, y: 2)
                         }
                     }
                 }

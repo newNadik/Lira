@@ -161,12 +161,14 @@ struct MainSceneView: View {
                         onHelp: {
                             hk.requestAuthorization()
                         },
-                        onSkip: { /* ... */ }
+                        onSkip: { /* ... */ },
+                        onDone: {
+                            UserDefaults.standard.set(true, forKey: "intro.seen")
+                        }
                     )
                 )
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     showDialog = true
-                    //                UserDefaults.standard.set(true, forKey: "intro.seen")
                     welcomeSeen = true
                 }
             }

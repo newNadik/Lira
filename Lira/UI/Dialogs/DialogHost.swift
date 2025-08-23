@@ -38,6 +38,7 @@ struct DialogHost: View {
                     .offset(x: presentedPhase ? 0 : -18, y: presentedPhase ? 0 : 6)
                     .animation(.spring(response: 0.45, dampingFraction: 0.85, blendDuration: 0.2), value: presentedPhase)
                     .transition(.identity)
+                    .shadow(color: Color("brown").opacity(0.4), radius: 10, x: 1, y: 1)
             }
 
             // Only the bubble (text + buttons) changes and animates
@@ -110,8 +111,6 @@ struct DialogHost: View {
     }
 
     private func handleChoice(_ choice: DialogChoice?) {
-        // Run any side-effect first (e.g., HealthKit permission sheet)
-        let hasAction = (choice?.action != nil)
         choice?.action?()
 
         // If this is the last line, do not advance the queue yet —
@@ -119,17 +118,6 @@ struct DialogHost: View {
         let isLast = (queue.lines.count > 0 && queue.index == queue.lines.count - 1)
         if isLast {
             isHiding = true
-            return
-        }
-
-        // If an action was performed (which may present a system sheet),
-        // give it time to appear before we change the line.
-        if hasAction {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.88, blendDuration: 0.2)) {
-                    queue.next()
-                }
-            }
         } else {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.88, blendDuration: 0.2)) {
                 queue.next()
