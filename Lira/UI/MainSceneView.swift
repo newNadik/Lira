@@ -86,24 +86,30 @@ struct MainSceneView: View {
                 .padding(.trailing, 10)
             }
             
-            if showJournal {
-                Color.black.opacity(0.28)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .onTapGesture { withAnimation { showJournal = false } }
+            // Shared full-screen dimmer for any popup
+            Color.black
+                .ignoresSafeArea()
+                .opacity((showJournal || showSettings || showStats) ? 0.28 : 0)
+                .animation(.easeInOut(duration: 0.2), value: (showJournal || showSettings || showStats))
+                .allowsHitTesting(showJournal || showSettings || showStats)
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                        if showSettings { showSettings = false }
+                        else if showStats { showStats = false }
+                        else if showJournal { showJournal = false }
+                    }
+                }
+                .zIndex(10)
 
-                JournalPopup(events: vm.state.eventLog, dayIndex: vm.state.currentDayIndex, onClose: { withAnimation { showJournal = false } })
-                    .padding(20)
-                    .transition(.scale.combined(with: .opacity))
-                    .animation(.spring(response: 0.35, dampingFraction: 0.9), value: showJournal)
+            PopupWrapper(isPresented: showJournal, z: 20) {
+                JournalPopup(
+                    events: vm.state.eventLog,
+                    dayIndex: vm.state.currentDayIndex,
+                    onClose: { withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { showJournal = false } }
+                )
             }
 
-            if showSettings {
-                Color.black.opacity(0.28)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .onTapGesture { withAnimation { showSettings = false } }
-
+            PopupWrapper(isPresented: showSettings, z: 30) {
                 SettingsPopup(
                     isMuted: (UserDefaults.standard.object(forKey: "audio.musicMuted") as? Bool) ?? false,
                     appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
@@ -113,31 +119,17 @@ struct MainSceneView: View {
                         UserDefaults.standard.set(newValue, forKey: "audio.musicMuted")
                         NotificationCenter.default.post(name: .bgmMuteChanged, object: nil, userInfo: ["muted": newValue])
                     },
-                    onConnectHealth: {
-                        hk.requestAuthorization()
-                    },
-                    onDisconnectHealth: {
-                        hk.disconnect()
-                    },
-                    onClose: { withAnimation { showSettings = false } }
+                    onConnectHealth: { hk.requestAuthorization() },
+                    onDisconnectHealth: { hk.disconnect() },
+                    onClose: { withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { showSettings = false } }
                 )
-                .padding(20)
-                .transition(.scale.combined(with: .opacity))
-                .animation(.spring(response: 0.35, dampingFraction: 0.9), value: showSettings)
             }
 
-            if showStats {
-                // Dimmed background
-                Color.black.opacity(0.28)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .onTapGesture { withAnimation { showStats = false } }
-
-                // Popup card
-                SettlementStatsPopup(state: vm.state, onClose: { withAnimation { showStats = false } })
-                    .padding(20)
-                    .transition(.scale.combined(with: .opacity))
-                    .animation(.spring(response: 0.35, dampingFraction: 0.9), value: showStats)
+            PopupWrapper(isPresented: showStats, z: 25) {
+                SettlementStatsPopup(
+                    state: vm.state,
+                    onClose: { withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { showStats = false } }
+                )
             }
         }
         .onReceive(hk.$snapshot) { snap in
