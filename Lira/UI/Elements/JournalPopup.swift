@@ -90,7 +90,7 @@ struct JournalPopup: View {
                     }
                 }
             }
-            .frame(maxWidth: 480)
+            .frame(maxWidth: 600)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color("beige"))

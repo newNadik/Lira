@@ -108,7 +108,7 @@ struct SettingsPopup: View {
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .padding(14)
-            .frame(maxWidth: 480)
+            .frame(maxWidth: 480, maxHeight: 480)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color("beige"))

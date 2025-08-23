@@ -13,71 +13,88 @@ struct SettlementStatsPopup: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                HStack(spacing: 6) {
-                    Image("stats_icon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)   // keep it small, like the HUD icons
-                    Text("Settlement Overview")
-                        .font(.headline)
-                        .foregroundColor(Color("brown"))
+        VStack {
+            Spacer()
+            VStack(spacing: 12) {
+                HStack {
+                    HStack(spacing: 6) {
+                        Image("stats_icon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)   // keep it small, like the HUD icons
+                        Text("Settlement Overview")
+                            .font(.headline)
+                            .foregroundColor(Color("brown"))
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(Color("brown"))
+                            .padding(6)
+                    }
+                    .keyboardShortcut(.cancelAction)
+                    .accessibilityLabel("Close stats")
                 }
-
-                Spacer()
-
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(Color("brown"))
-                        .padding(6)
+                Text("Day \(state.currentDayIndex)")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundColor(Color("brown"))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 2)
+                
+                ViewThatFits(in: .vertical) {
+                    // If content fits, no scrolling and the popup shrinks to content.
+                    statsContent()
+                    
+                    // If it doesn't fit, fall back to a scrollable area with a sensible max height.
+                    ScrollView {
+                        statsContent()
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxHeight: 500)
                 }
-                .keyboardShortcut(.cancelAction)
-                .accessibilityLabel("Close stats")
             }
-            Text("Day \(state.currentDayIndex)")
-                .font(.subheadline.weight(.bold))
-                .foregroundColor(Color("brown"))
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.bottom, 2)
+            .padding(14)
+            .frame(maxWidth: 600)
+            .frame(alignment: .bottom)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color("beige"))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color("brown"), lineWidth: 2.5)
+            )
+            .shadow(color: Color("brown").opacity(0.18), radius: 12, x: 0, y: 6)
+        }
+    }
 
-            ScrollView {
-                VStack(spacing: 24) {
-                    StatsSection(title: "Population") {
-                        gridRow("Population", value: state.population, asInt: true)
-                        gridRow("Beds", value: state.housingCapacity, asInt: true)
-                        gridRow("Schools", value: state.schoolCount, asInt: true)
-                    }
-                    StatsSection(title: "Resources") {
-                        gridRow("Food stock (rations)", value: state.foodStockRations)
-                        gridRow("Build points", value: state.buildPoints)
-                    }
-                    StatsSection(title: "Infrastructure") {
-                        gridRow("Greenhouses", value: state.greenhouseCount, asInt: true)
-                    }
-                    StatsSection(title: "Research") {
-                        gridRow("Tech level", value: state.technologyLevel)
-                        gridRow("Science points", value: state.sciencePoints)
-                    }
-                    StatsSection(title: "Explored Area") {
-                        gridRow("Explored radius", value: state.exploredRadiusKm, unit: "km", metersIfSmall: true)
-                    }
-                }
-                .padding(.top, 4)
+    @ViewBuilder
+    private func statsContent() -> some View {
+        VStack(spacing: 24) {
+            StatsSection(title: "Population") {
+                gridRow("Population", value: state.population, asInt: true)
+                gridRow("Beds", value: state.housingCapacity, asInt: true)
+                gridRow("Schools", value: state.schoolCount, asInt: true)
+            }
+            StatsSection(title: "Resources") {
+                gridRow("Food stock (rations)", value: state.foodStockRations, asInt: true)
+                gridRow("Build points", value: state.buildPoints)
+            }
+            StatsSection(title: "Infrastructure") {
+                gridRow("Greenhouses", value: state.greenhouseCount, asInt: true)
+            }
+            StatsSection(title: "Research") {
+                gridRow("Tech level", value: state.technologyLevel)
+                gridRow("Science points", value: state.sciencePoints)
+            }
+            StatsSection(title: "Explored Area") {
+                gridRow("Explored radius", value: state.exploredRadiusKm, unit: "km", metersIfSmall: true)
             }
         }
-        .padding(14)
-        .frame(maxWidth: 420)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color("beige"))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color("brown"), lineWidth: 2.5)
-        )
-        .shadow(color: Color("brown").opacity(0.18), radius: 12, x: 0, y: 6)
+        .padding(.top, 4)
     }
 
     // MARK: - UI Helpers

@@ -6,7 +6,8 @@ import Combine
 public final class HealthKitManager: ObservableObject {
     @Published public private(set) var snapshot: HealthSnapshot = .zero
     @Published public private(set) var authState: HealthAuthState = .notDetermined
-
+    
+    private let wasAuthorizationRequestedKey = "wasAuthorizationRequested"
     private var observers: [HKObserverQuery] = []
 
     /// Convenience: true if HealthKit is authorized for our requested types
@@ -28,7 +29,9 @@ public final class HealthKitManager: ObservableObject {
     }()
 
     public init() {
-        requestAuthorization()
+        if(wasRequested()) {
+            requestAuthorization()
+        }
     }
 
     public func requestAuthorization() {
@@ -38,6 +41,7 @@ public final class HealthKitManager: ObservableObject {
         store.requestAuthorization(toShare: nil, read: toRead) { [weak self] ok, _ in
             DispatchQueue.main.async {
                 guard let self else { return }
+                self.setRequested()
                 self.authState = ok ? .authorized : .denied
                 if ok { self.refreshAll(); self.startObservers() }
             }
@@ -147,5 +151,15 @@ public final class HealthKitManager: ObservableObject {
         observers.append(obs)
         store.execute(obs)
         store.enableBackgroundDelivery(for: type, frequency: .immediate) { _, _ in }
+    }
+    
+    /// Mark that authorization has been requested
+    func setRequested() {
+        UserDefaults.standard.set(true, forKey: wasAuthorizationRequestedKey)
+    }
+    
+    /// Check if authorization was requested before
+    func wasRequested() -> Bool {
+        return UserDefaults.standard.bool(forKey: wasAuthorizationRequestedKey)
     }
 }
