@@ -74,7 +74,7 @@ struct HealthStatCard: View {
                 .frame(width: 25, height: 25)
             
             Text(valueText)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 14, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .foregroundColor(Color("brown"))
                 .padding(.horizontal, 6)

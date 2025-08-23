@@ -13,6 +13,7 @@ struct LiraApp: App {
             ZStack {
                 if showingMain {
                     MainSceneView() // your scrolling background
+//                    ContentView()
                 } else {
                     SplashView()
                 }
