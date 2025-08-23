@@ -47,7 +47,7 @@ struct LiraApp: App {
                 // List all your track base names (without extension)
                 // e.g. "bgm_forest.mp3" → "bgm_forest"
                 bgm.loadAndPlay(
-                    tracks: ["calm-sound-of-the-benjo-255105 Novifi", "WMNE_A001_BanjoLoving"], // add more like "bgm_menu", "bgm_calm"
+                    tracks: ["track", "track-2", "track-3", "track-4"], // add more like "bgm_menu", "bgm_calm"
                     preferredExtension: "mp3" // or "m4a" if that’s your files’ ext
                 )
             }
