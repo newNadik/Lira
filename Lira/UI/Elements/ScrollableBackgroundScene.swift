@@ -53,10 +53,10 @@ final class ScrollableBackgroundScene: SKScene {
         camVelocity = 0
         
         // TEST Char
-//        let lir = BeanieSpriteNode()
-//        lir.setHeight(300)
-//        lir.position = CGPoint(x: 0, y: -100)
-//        addChild(lir)
+//        let liri = NayaSpriteNode()
+//        liri.setHeight(300)
+//        liri.position = CGPoint(x: 0, y: -100)
+//        addChild(liri)
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
@@ -190,12 +190,15 @@ final class ScrollableBackgroundScene: SKScene {
         lir.setHeight(characterHeight)
         lir.position = CGPoint(x: width * 0.65, y: height * -0.05)
         addChild(lir)
-        
-        
+                
         let beanie = BeanieSpriteNode()
         beanie.setHeight(characterHeight)
         beanie.position = CGPoint(x: width * -0.5, y: height * -0.07)
         addChild(beanie)
         
+        let naya = NayaSpriteNode()
+        naya.setHeight(characterHeight)
+        naya.position = CGPoint(x: width * 0.04, y: height * 0.17)
+        addChild(naya)
     }
 }
