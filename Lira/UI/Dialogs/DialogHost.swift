@@ -31,8 +31,8 @@ struct DialogHost: View {
             // Persistent character — does not animate between lines
             if isPresented {
                 character
-                    .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 50 : -50)
-                    .padding(.bottom, 25)
+                    .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 50 : -30)
+                    .padding(.bottom, 20)
                     .opacity(presentedPhase ? 1 : 0)
                     .scaleEffect(presentedPhase ? 1 : 0.98)
                     .offset(x: presentedPhase ? 0 : -18, y: presentedPhase ? 0 : 6)

@@ -11,8 +11,8 @@ final class LirSpriteNode: SKNode, SKAnimatableNode {
         addChild(body)
 
         // Position leaves on top of the head; tweak these to match your art.
-        leftLeaf.position  = CGPoint(x: 0, y: body.size.height*0.46)
-        rightLeaf.position = CGPoint(x:  0, y: body.size.height*0.46)
+        leftLeaf.position  = CGPoint(x: body.size.width * 0.01, y: body.size.height * 0.46)
+        rightLeaf.position = CGPoint(x: body.size.width * -0.01, y: body.size.height * 0.46)
 
         // Anchor at the stem so they pivot naturally
         leftLeaf.anchorPoint  = CGPoint(x: 1, y: 0)
@@ -20,6 +20,11 @@ final class LirSpriteNode: SKNode, SKAnimatableNode {
 
         addChild(leftLeaf)
         addChild(rightLeaf)
+        
+        // Set zPositions so the body is behind the leaves
+        body.zPosition = 0
+        leftLeaf.zPosition = 1
+        rightLeaf.zPosition = 1
     }
 
     // MARK: Init
@@ -35,88 +40,60 @@ final class LirSpriteNode: SKNode, SKAnimatableNode {
         startWind()
     }
 
-    // MARK: Wind animation
-    /// Gentle, natural sway with occasional gusts
+    // MARK: Wind animation (relaxing, continuous sine wave)
+    /// Start a gentle continuous sway using a sine function. No jerky endpoints.
     func startWind() {
-        run(makeWindCycle(), withKey: "wind")
+        // Clear any previous actions
+        stopWind()
+
+        // Optional: subtle bobbing of the whole body for added life
+        runSineBob(on: body, amplitude: 3.0, period: 3.2, key: "body_bob")
+        
+        let amplitudeDeg = 6.0
+        let period = 2.2
+        // Gentle opposite-phase sway on leaves
+        runSineSway(on: leftLeaf,  amplitudeDeg: amplitudeDeg, period: period, phase: 0.0,  key: "sine_sway")
+        runSineSway(on: rightLeaf, amplitudeDeg: amplitudeDeg, period: period, phase: .pi, key: "sine_sway")
+
     }
 
     func stopWind() {
         removeAction(forKey: "wind")
         leftLeaf.removeAllActions()
         rightLeaf.removeAllActions()
-    }
-
-    private func makeWindCycle() -> SKAction {
-        // base, always-on sway (slightly out of phase so they move differently)
-        let baseLeft  = swayAction(amplitudeDeg: 7,  period: 1.6, phase: 0.0)
-        let baseRight = swayAction(amplitudeDeg: 7,  period: 1.6, phase: .pi)
-
-        leftLeaf.run(baseLeft,  withKey: "base")
-        rightLeaf.run(baseRight, withKey: "base")
-
-        // “Gusts”: briefly increase amplitude + add a tiny bend/offset
-        func gust(_ leaf: SKSpriteNode, stronger: Bool) -> SKAction {
-            let amp: CGFloat = stronger ? 18 : 12
-            let dur: TimeInterval = stronger ? 0.9 : 0.7
-
-            let push = SKAction.group([
-                SKAction.customAction(withDuration: dur) { node, t in
-                    // add a little squash for a bend illusion
-                    let k = CGFloat(t)/CGFloat(dur)
-                    let bend = 1 - 0.06 * sin(k * .pi)
-                    node.xScale = bend
-                    node.yScale = 1 + (1 - bend)
-                },
-                swayToPeak(leaf, amplitudeDeg: amp, duration: dur)
-            ])
-
-            let relax = SKAction.group([
-                SKAction.scaleX(to: 1, duration: 0.4),
-                SKAction.scaleY(to: 1, duration: 0.4)
-            ])
-
-            return .sequence([push, relax])
-        }
-
-        // Random gust scheduler
-        let wait = SKAction.wait(forDuration: 1.2, withRange: 1.4)
-        let schedule = SKAction.run { [weak self] in
-            guard let self else { return }
-            let strong = Bool.random()
-            self.leftLeaf.run(gust(self.leftLeaf, stronger: strong))
-            self.rightLeaf.run(gust(self.rightLeaf, stronger: !strong))
-        }
-
-        return .repeatForever(.sequence([wait, schedule]))
+        body.removeAllActions()
     }
 
     // MARK: Helpers
-    /// Ping‑pong rotation around 0 with given amplitude & period (+ phase offset)
-    private func swayAction(amplitudeDeg: CGFloat, period: TimeInterval, phase: CGFloat) -> SKAction {
-        // rotate from -A to +A and back, eased
-        let A = amplitudeDeg * .pi/180
-        let half = period / 2
-        let toPos = SKAction.rotate(toAngle:  A, duration: half, shortestUnitArc: true)
-        toPos.timingMode = .easeInEaseOut
-        let toNeg = SKAction.rotate(toAngle: -A, duration: half, shortestUnitArc: true)
-        toNeg.timingMode = .easeInEaseOut
-
-        // phase offset at start
-        let startAngle = A * sin(phase)
-        let setPhase = SKAction.rotate(toAngle: startAngle, duration: 0)
-
-        return .sequence([setPhase, .repeatForever(.sequence([toPos, toNeg]))])
+    /// Continuous sine-based rotation (very smooth). Repeats forever without hard edges.
+    private func runSineSway(on node: SKSpriteNode,
+                              amplitudeDeg: CGFloat,
+                              period: TimeInterval,
+                              phase: CGFloat,
+                              key: String) {
+        let A = amplitudeDeg * .pi / 180
+        let w = 2 * CGFloat.pi / CGFloat(period)
+        let duration: TimeInterval = 600 // long duration; we repeat forever
+        let action = SKAction.customAction(withDuration: duration) { n, t in
+            let time = CGFloat(t)
+            (n as? SKSpriteNode)?.zRotation = A * sin(w * time + phase)
+        }
+        node.run(.repeatForever(action), withKey: key)
     }
 
-    /// Briefly steer toward a higher angle, used inside gusts
-    private func swayToPeak(_ leaf: SKSpriteNode, amplitudeDeg: CGFloat, duration: TimeInterval) -> SKAction {
-        let A = amplitudeDeg * .pi/180
-        // pick current side and push further that way
-        let target = (leaf.zRotation >= 0) ? A : -A
-        let rot = SKAction.rotate(toAngle: target, duration: duration, shortestUnitArc: true)
-        rot.timingMode = .easeInEaseOut
-        return rot
+    /// Subtle vertical bob for the body to feel alive
+    private func runSineBob(on node: SKSpriteNode,
+                             amplitude: CGFloat,
+                             period: TimeInterval,
+                             key: String) {
+        let w = 2 * CGFloat.pi / CGFloat(period)
+        let baseY = node.position.y
+        let duration: TimeInterval = 600
+        let action = SKAction.customAction(withDuration: duration) { n, t in
+            let time = CGFloat(t)
+            n.position.y = baseY + amplitude * sin(w * time)
+        }
+        node.run(.repeatForever(action), withKey: key)
     }
 
     // MARK: SKAnimatableNode

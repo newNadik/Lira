@@ -77,9 +77,9 @@ struct DialogView: View {
             }
             .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 250 : 50)
             .padding(.trailing, 10)
+            .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 50 : 0)
             .frame(maxWidth: 700)
         }
-//        .offset(y: isAppeared ? 0 : 40)
         .onChange(of: isHiding) { hiding in
             if hiding {
                 // trigger exit animation
