@@ -50,6 +50,12 @@ final class ScrollableBackgroundScene: SKScene {
 
         targetCamX = cam.position.x
         camVelocity = 0
+        
+        // TEST Char
+        let lir = LirSpriteNode()
+        lir.setHeight(300)
+        lir.position = CGPoint(x: 0, y: -100)
+        addChild(lir)
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
