@@ -51,12 +51,6 @@ final class ScrollableBackgroundScene: SKScene {
 
         targetCamX = cam.position.x
         camVelocity = 0
-        
-        // TEST Char
-//        let liri = NayaSpriteNode()
-//        liri.setHeight(300)
-//        liri.position = CGPoint(x: 0, y: -100)
-//        addChild(liri)
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
@@ -200,5 +194,11 @@ final class ScrollableBackgroundScene: SKScene {
         naya.setHeight(characterHeight)
         naya.position = CGPoint(x: width * 0.04, y: height * 0.17)
         addChild(naya)
+        
+        
+        let lune = LuneSpriteNode()
+        lune.setHeight(characterHeight)
+        lune.position = CGPoint(x: width * 0.025, y: height * -0.18)
+        addChild(lune)
     }
 }
