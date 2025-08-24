@@ -50,7 +50,7 @@ final class LirSpriteNode: SKNode, SKAnimatableNode {
         runSineBob(on: body, amplitude: 3.0, period: 3.2, key: "body_bob")
         
         let amplitudeDeg = 6.0
-        let period = 2.2
+        let period = 2.5
         // Gentle opposite-phase sway on leaves
         runSineSway(on: leftLeaf,  amplitudeDeg: amplitudeDeg, period: period, phase: 0.0,  key: "sine_sway")
         runSineSway(on: rightLeaf, amplitudeDeg: amplitudeDeg, period: period, phase: .pi, key: "sine_sway")

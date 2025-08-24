@@ -11,7 +11,7 @@ struct MainSceneView: View {
     
     @StateObject private var dialogQueue = DialogQueue()
     @State private var showDialog = false
-    @State private var welcomeSeen = UserDefaults.standard.bool(forKey: "intro.seen-tt")
+    @State private var welcomeSeen = UserDefaults.standard.bool(forKey: "intro.seen")
     
     @State private var scene = ScrollableBackgroundScene(
         size: UIScreen.main.bounds.size,
