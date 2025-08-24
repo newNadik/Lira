@@ -67,6 +67,12 @@ protocol SKAnimatableNode: AnyObject {
                              amplitude: CGFloat,
                              period: TimeInterval,
                              key: String)
+    
+    func addDropShadow(
+        offset: CGPoint,
+        color: SKColor,
+        alpha: CGFloat,
+        scale: CGFloat)
 }
 
 extension SKAnimatableNode where Self: SKNode {
@@ -108,6 +114,30 @@ extension SKAnimatableNode where Self: SKNode {
         node.run(.repeatForever(action), withKey: key)
     }
     
+    func addDropShadow(
+        offset: CGPoint = CGPoint(x: 1, y: 2),
+        color: SKColor = .black,
+        alpha: CGFloat = 0.2,
+        scale: CGFloat = 3.0
+    ) {
+        // Render this node into a texture
+        if let scene = self.scene,
+           let texture = scene.view?.texture(from: self) {
+            
+            let shadow = SKSpriteNode(texture: texture)
+            shadow.color = color
+            shadow.colorBlendFactor = 1.0
+            shadow.alpha = alpha
+            shadow.zPosition = self.zPosition - 1
+            shadow.setScale(scale)
+            shadow.position = CGPoint(
+                x: self.position.x + offset.x,
+                y: self.position.y + offset.y
+            )
+            
+            self.parent?.addChild(shadow)
+        }
+    }
 }
 
 struct NodeSpriteView<NodeType: SKNode & SKAnimatableNode>: View {

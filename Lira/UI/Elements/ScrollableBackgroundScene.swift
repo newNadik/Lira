@@ -44,6 +44,7 @@ final class ScrollableBackgroundScene: SKScene {
 
         // Ensure background exists
         ensureBackground()
+        setupCharacters()
 
         layoutBackgroundToFitHeight()
         centerCamera()
@@ -52,15 +53,16 @@ final class ScrollableBackgroundScene: SKScene {
         camVelocity = 0
         
         // TEST Char
-        let lir = LirSpriteNode()
-        lir.setHeight(300)
-        lir.position = CGPoint(x: 0, y: -100)
-        addChild(lir)
+//        let lir = BeanieSpriteNode()
+//        lir.setHeight(300)
+//        lir.position = CGPoint(x: 0, y: -100)
+//        addChild(lir)
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
         // Make sure nodes exist if size changes early
         ensureBackground()
+        setupCharacters()
         layoutBackgroundToFitHeight()
         clampCamera()
 
@@ -175,5 +177,25 @@ final class ScrollableBackgroundScene: SKScene {
                 camVelocity = 0
             }
         }
+    }
+    
+    func setupCharacters() {
+        
+        let width = size.width
+        let height = size.height
+        
+        let characterHeight = 130.0
+        
+        let lir = LirSpriteNode()
+        lir.setHeight(characterHeight)
+        lir.position = CGPoint(x: width * 0.65, y: height * -0.05)
+        addChild(lir)
+        
+        
+        let beanie = BeanieSpriteNode()
+        beanie.setHeight(characterHeight)
+        beanie.position = CGPoint(x: width * -0.5, y: height * -0.07)
+        addChild(beanie)
+        
     }
 }
