@@ -56,6 +56,17 @@ protocol SKAnimatableNode: AnyObject {
     
     /// scale the node so its height matches `targetHeight`
     func setHeight(_ targetHeight: CGFloat)
+    
+    func runSineSway(on node: SKSpriteNode,
+                              amplitudeDeg: CGFloat,
+                              period: TimeInterval,
+                              phase: CGFloat,
+                              key: String)
+    
+    func runSineBob(on node: SKSpriteNode,
+                             amplitude: CGFloat,
+                             period: TimeInterval,
+                             key: String)
 }
 
 extension SKAnimatableNode where Self: SKNode {
@@ -63,6 +74,40 @@ extension SKAnimatableNode where Self: SKNode {
         let scale = targetHeight / size.height
         self.setScale(scale)
     }
+    
+    
+    // MARK: Helpers
+    /// Continuous sine-based rotation (very smooth). Repeats forever without hard edges.
+    func runSineSway(on node: SKSpriteNode,
+                              amplitudeDeg: CGFloat,
+                              period: TimeInterval,
+                              phase: CGFloat,
+                              key: String) {
+        let A = amplitudeDeg * .pi / 180
+        let w = 2 * CGFloat.pi / CGFloat(period)
+        let duration: TimeInterval = 600 // long duration; we repeat forever
+        let action = SKAction.customAction(withDuration: duration) { n, t in
+            let time = CGFloat(t)
+            (n as? SKSpriteNode)?.zRotation = A * sin(w * time + phase)
+        }
+        node.run(.repeatForever(action), withKey: key)
+    }
+
+    /// Subtle vertical bob for the body to feel alive
+    func runSineBob(on node: SKSpriteNode,
+                             amplitude: CGFloat,
+                             period: TimeInterval,
+                             key: String) {
+        let w = 2 * CGFloat.pi / CGFloat(period)
+        let baseY = node.position.y
+        let duration: TimeInterval = 600
+        let action = SKAction.customAction(withDuration: duration) { n, t in
+            let time = CGFloat(t)
+            n.position.y = baseY + amplitude * sin(w * time)
+        }
+        node.run(.repeatForever(action), withKey: key)
+    }
+    
 }
 
 struct NodeSpriteView<NodeType: SKNode & SKAnimatableNode>: View {

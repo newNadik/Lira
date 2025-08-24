@@ -50,7 +50,7 @@ final class LirSpriteNode: SKNode, SKAnimatableNode {
         runSineBob(on: body, amplitude: 3.0, period: 3.2, key: "body_bob")
         
         let amplitudeDeg = 6.0
-        let period = 2.5
+        let period = Config.animationPeriod
         // Gentle opposite-phase sway on leaves
         runSineSway(on: leftLeaf,  amplitudeDeg: amplitudeDeg, period: period, phase: 0.0,  key: "sine_sway")
         runSineSway(on: rightLeaf, amplitudeDeg: amplitudeDeg, period: period, phase: .pi, key: "sine_sway")
@@ -62,38 +62,6 @@ final class LirSpriteNode: SKNode, SKAnimatableNode {
         leftLeaf.removeAllActions()
         rightLeaf.removeAllActions()
         body.removeAllActions()
-    }
-
-    // MARK: Helpers
-    /// Continuous sine-based rotation (very smooth). Repeats forever without hard edges.
-    private func runSineSway(on node: SKSpriteNode,
-                              amplitudeDeg: CGFloat,
-                              period: TimeInterval,
-                              phase: CGFloat,
-                              key: String) {
-        let A = amplitudeDeg * .pi / 180
-        let w = 2 * CGFloat.pi / CGFloat(period)
-        let duration: TimeInterval = 600 // long duration; we repeat forever
-        let action = SKAction.customAction(withDuration: duration) { n, t in
-            let time = CGFloat(t)
-            (n as? SKSpriteNode)?.zRotation = A * sin(w * time + phase)
-        }
-        node.run(.repeatForever(action), withKey: key)
-    }
-
-    /// Subtle vertical bob for the body to feel alive
-    private func runSineBob(on node: SKSpriteNode,
-                             amplitude: CGFloat,
-                             period: TimeInterval,
-                             key: String) {
-        let w = 2 * CGFloat.pi / CGFloat(period)
-        let baseY = node.position.y
-        let duration: TimeInterval = 600
-        let action = SKAction.customAction(withDuration: duration) { n, t in
-            let time = CGFloat(t)
-            n.position.y = baseY + amplitude * sin(w * time)
-        }
-        node.run(.repeatForever(action), withKey: key)
     }
 
     // MARK: SKAnimatableNode
