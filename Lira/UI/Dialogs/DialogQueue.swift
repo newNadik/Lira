@@ -1,10 +1,13 @@
 import Foundation
 import Combine
+import SwiftUI
 
 final class DialogQueue: ObservableObject {
     @Published private(set) var lines: [DialogLine] = []
     @Published private(set) var index: Int = 0
 
+    var characterView: AnyView? = nil
+    
     var isFinished: Bool { index >= lines.count }
     var current: DialogLine? { isFinished ? nil : lines[index] }
 

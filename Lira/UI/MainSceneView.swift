@@ -17,7 +17,8 @@ struct MainSceneView: View {
         size: UIScreen.main.bounds.size,
         imageName: "background"
     )
-
+    var charHeight = UIDevice.current.userInterfaceIdiom == .pad ? 600.0 : 400.0
+    
     var body: some View {
 
         ZStack(alignment: .top) {
@@ -143,10 +144,7 @@ struct MainSceneView: View {
                     queue: dialogQueue,
                     onDismiss: { /* optional cleanup */ },
                     character: //CharacterSpriteView(imageName: "lir").erased()
-                    NodeSpriteView(
-                        node: LirSpriteNode(),
-                        height: UIDevice.current.userInterfaceIdiom == .pad ? 600 : 400
-                    ).erased()
+                    dialogQueue.characterView!
                 )
                 .zIndex(40)
             }
@@ -161,6 +159,10 @@ struct MainSceneView: View {
         }
         .onAppear {
             if !welcomeSeen {
+                dialogQueue.characterView = NodeSpriteView(
+                    node: LirSpriteNode(),
+                    height: charHeight
+                ).erased()
                 dialogQueue.load(
                     DialogLine.welcomeSequence(
                         onHelp: {
@@ -180,13 +182,34 @@ struct MainSceneView: View {
             scene.onCharacterTapped = { name in
                 switch name {
                 case "lir":
-                    print("Player tapped!")
+                    dialogQueue.characterView = NodeSpriteView(
+                        node: LirSpriteNode(),
+                        height: charHeight
+                    ).erased()
+                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    showDialog = true
                 case "beanie":
-                    print("Player tapped!")
+                    dialogQueue.characterView = NodeSpriteView(
+                        node: BeanieSpriteNode(),
+                        height: charHeight
+                    ).erased()
+                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    showDialog = true
+                
                 case "naya":
-                    print("Player tapped!")
+                    dialogQueue.characterView = NodeSpriteView(
+                        node: NayaSpriteNode(),
+                        height: charHeight
+                    ).erased()
+                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    showDialog = true
                 case "lune":
-                    print("Player tapped!")
+                    dialogQueue.characterView = NodeSpriteView(
+                        node: LuneSpriteNode(),
+                        height: charHeight
+                    ).erased()
+                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    showDialog = true
                 default:
                     print("Unknown character tapped: \(name)")
                 }
