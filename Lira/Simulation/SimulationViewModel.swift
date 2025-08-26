@@ -42,6 +42,7 @@ final class SimulationViewModel: ObservableObject {
         } else {
             // Seed starter plans from Config so models stay pure when no saved data
             state.buildQueue = Config.initialBuildQueue
+            EventGenerator.autoDaily(day: 1, state: &state)
         }
 
         // Restore meta (timing & baselines) or initialize

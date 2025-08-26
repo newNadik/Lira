@@ -16,7 +16,7 @@ struct SimulationEngine {
         }()
 
         // Advance exactly one full in-game day.
-        advanceFractionOfDay(state: &state, healthDeltas: m, fractionOfDay: 1.0, emitDailySummary: false)
+        advanceFractionOfDay(state: &state, healthDeltas: m, fractionOfDay: 1.0, emitDailySummary: true)
     }
 
     // MARK: - Real-time friendly partial-day advance
@@ -244,6 +244,9 @@ struct SimulationEngine {
         if emitDailySummary {
             // Daily exploration summary at end of day
             EventGenerator.explorationDaily(day: state.currentDayIndex, deltaKm: max(0, state.exploredRadiusKm - previousExplored), totalKm: state.exploredRadiusKm, state: &state)
+
+            // Emit ambient auto-events for this day
+            EventGenerator.autoDaily(day: state.currentDayIndex, state: &state)
 
             // Advance the day index because we've simulated a full day here
             state.currentDayIndex += 1

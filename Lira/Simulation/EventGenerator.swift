@@ -10,6 +10,10 @@ enum EventKind {
     case resources
     case capacity
     case general
+    case environment
+    case warning
+    case celebration
+    case narrative
 }
 
 /// Central place for formatting + appending events to the state's log.
@@ -27,6 +31,10 @@ enum EventGenerator {
         case .resources:   return "🍎"
         case .capacity:    return "🏠"
         case .general:     return "ℹ️"
+        case .environment: return "🌦"
+        case .warning:     return "⚠️"
+        case .celebration: return "🎉"
+        case .narrative:   return "📖"
         }
     }
 
@@ -55,6 +63,37 @@ enum EventGenerator {
     private static let discoveryVerbs: [String] = [
         "found", "spotted", "catalogued", "sampled", "noted"
     ]
+
+    // Flavor pools for early- and mid-game ambience
+    private static let starterSupplies: [String] = [
+        "seed packs", "tool kits", "water filters", "bandages",
+        "solar cells", "spare antennae clips", "camp stoves",
+        "blankets", "navigation beacons", "field notebooks"
+    ]
+
+    private static let skyPhenomena: [String] = [
+        "a soft twin-moon rise", "a slow meteor ribbon",
+        "emerald auroras over the dunes", "glow-clouds drifting low",
+        "a ring-shadow sweeping the valley"
+    ]
+
+    private static let weatherSnippets: [String] = [
+        "gentle rain freshened the greenhouses",
+        "a dust breeze coated everything in gold",
+        "a cool fog curled along the river flats",
+        "bright sun made the reeds sing",
+        "night frost sparkled on the walkways"
+    ]
+
+    private static let localFaunaRumors: [String] = [
+        "tiny shellbacks nest near the sweetwater pool",
+        "reed-mice gather around lanterns",
+        "glow beetles dance at dusk",
+        "sandcrabs like shiny stones",
+        "wind moths follow footsteps"
+    ]
+
+    private static func join(_ a: String, _ b: String) -> String { "\(a) and \(b)" }
     
     private static func push(_ text: String, into state: inout SimulationState) {
         state.eventLog.append(text)
@@ -63,6 +102,25 @@ enum EventGenerator {
         }
     }
     
+    // MARK: Prologue / Start-of-game
+    /// Call this once on the first playable day to seed a welcoming journal.
+    static func prologue(day: Int, state: inout SimulationState) {
+        push(day: day, kind: .narrative, body: "Touchdown successful. Instruments nominal.", into: &state)
+        push(day: day, kind: .construction, body: "Raised first shelter and set a small campfire.", into: &state)
+        // Unpack two random supply items for flavor
+        if let a = starterSupplies.randomElement(), let b = starterSupplies.filter({ $0 != a }).randomElement() {
+            push(day: day, kind: .general, body: "Unpacked \(join(a, b)).", into: &state)
+        }
+        push(day: day, kind: .construction, body: "Started building a greenhouse", into: &state)
+    }
+
+    /// First night flavor
+    static func firstNight(day: Int, state: inout SimulationState) {
+        if let sky = skyPhenomena.randomElement() {
+            push(day: day, kind: .narrative, body: "Camp quiet. We watched \(sky).", into: &state)
+        }
+    }
+
     // MARK: Exploration
     static func explorationDaily(day: Int, deltaKm: Double, totalKm: Double, state: inout SimulationState) {
         var msg = String(format: "Explored surroundings (+%.2f km, total %.2f km).", deltaKm, totalKm)
@@ -153,5 +211,56 @@ enum EventGenerator {
     static func generalInfo(day: Int, message: String, state: inout SimulationState) {
         push(day: day, kind: .general, body: message, into: &state)
     }
-    
+
+    // MARK: Ambient & Special Events
+    /// Light-weather note that makes the world feel alive.
+    static func weatherUpdate(day: Int, state: inout SimulationState) {
+        if Int.random(in: 0..<100) < 70, let note = weatherSnippets.randomElement() {
+            push(day: day, kind: .environment, body: note + ".", into: &state)
+        }
+    }
+
+    /// Occasional warning to add drama without gameplay effect (can be hooked later).
+    static func minorWarning(day: Int, state: inout SimulationState) {
+        let warnings = [
+            "Dust gusts expected by evening.",
+            "Watch for loose walkway planks near the river.",
+            "Conserve lantern oil — shipment delayed.",
+            "Radio static increasing around the ridge."
+        ]
+        if let w = warnings.randomElement() { push(day: day, kind: .warning, body: w, into: &state) }
+    }
+
+    /// Flavor: locals, critters, and small discoveries.
+    static func rumor(day: Int, state: inout SimulationState) {
+        if let r = localFaunaRumors.randomElement() {
+            push(day: day, kind: .narrative, body: "Report: \(r).", into: &state)
+        }
+    }
+
+    /// Celebration hook for achievements or story beats.
+    static func celebrate(day: Int, message: String, state: inout SimulationState) {
+        push(day: day, kind: .celebration, body: message, into: &state)
+    }
+
+    // MARK: Auto wiring convenience
+    /// Call this once per day to automatically sprinkle ambience.
+    /// Safe to call on any day; it will pick items probabilistically.
+    static func autoDaily(day: Int, state: inout SimulationState) {
+        // Always try a small weather note
+        weatherUpdate(day: day, state: &state)
+        
+        // ~40% chance of a rumor, ~20% of a minor warning
+        if Int.random(in: 0..<100) < 40 { rumor(day: day, state: &state) }
+        if Int.random(in: 0..<100) < 20 { minorWarning(day: day, state: &state) }
+        
+        // Soft early-game narrative moments
+        if day == 1 {
+            prologue(day: day, state: &state)
+            firstNight(day: day, state: &state)
+        }
+        if day == 2 && Int.random(in: 0..<100) < 60 {
+            push(day: day, kind: .narrative, body: "Morning routines forming. Tools hung, paths swept.", into: &state)
+        }
+    }
 }
