@@ -193,7 +193,7 @@ struct MainSceneView: View {
                         node: BeanieSpriteNode(),
                         height: charHeight
                     ).erased()
-                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    dialogQueue.load([DialogLine(text: BeanieSpriteNode.presentLine(simulationVM: vm))])
                     showDialog = true
                 
                 case "naya":
