@@ -247,6 +247,13 @@ enum EventGenerator {
     /// Call this once per day to automatically sprinkle ambience.
     /// Safe to call on any day; it will pick items probabilistically.
     static func autoDaily(day: Int, state: inout SimulationState) {
+        
+        // Soft early-game narrative moments
+        if day == 1 {
+            prologue(day: day, state: &state)
+            firstNight(day: day, state: &state)
+        }
+        
         // Always try a small weather note
         weatherUpdate(day: day, state: &state)
         
@@ -254,13 +261,5 @@ enum EventGenerator {
         if Int.random(in: 0..<100) < 40 { rumor(day: day, state: &state) }
         if Int.random(in: 0..<100) < 20 { minorWarning(day: day, state: &state) }
         
-        // Soft early-game narrative moments
-        if day == 1 {
-            prologue(day: day, state: &state)
-            firstNight(day: day, state: &state)
-        }
-        if day == 2 && Int.random(in: 0..<100) < 60 {
-            push(day: day, kind: .narrative, body: "Morning routines forming. Tools hung, paths swept.", into: &state)
-        }
     }
 }

@@ -116,6 +116,23 @@ struct SettlementStatsPopup: View {
         }
     }
 
+    // Minimal inline tag used to show +values from health
+    @ViewBuilder
+    private func deltaTag(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+            Text(text)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color("brown").opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
     @ViewBuilder
     private func gridRow(_ title: String, value: Double, asInt: Bool = false, unit: String? = nil, metersIfSmall: Bool = false) -> some View {
         HStack(spacing: 8) {
@@ -125,6 +142,26 @@ struct SettlementStatsPopup: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Spacer(minLength: 12)
+            // Inline health-driven +value tags (simple and title-based)
+            if title == "Explored radius" {
+                let c = state.lastContributions
+                if c.stepsExplorationKm > 0 {
+                    deltaTag(icon: "steps_icon", text: "+\(format(c.stepsExplorationKm, asInt: false)) km")
+                }
+            } else if title == "Science points" {
+                let c = state.lastContributions
+                if c.sleepScience > 0 {
+                    deltaTag(icon: "sleep_icon", text: "+\(format(c.sleepScience, asInt: false))")
+                }
+                if c.daylightScience > 0 {
+                    deltaTag(icon: "sun_icon", text: "+\(format(c.daylightScience, asInt: false))")
+                }
+            } else if title == "Build points" {
+                let c = state.lastContributions
+                if c.exerciseBuildPoints > 0 {
+                    deltaTag(icon: "exercise_icon", text: "+\(format(c.exerciseBuildPoints, asInt: false))")
+                }
+            }
             Text(formatWithUnit(value, asInt: asInt, unit: unit, metersIfSmall: metersIfSmall))
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .monospacedDigit()

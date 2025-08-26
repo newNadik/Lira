@@ -49,6 +49,8 @@ struct SimulationState: Codable {
         
     var eventLog: [String]
 
+    var lastContributions: HealthContributions
+    
     init() {
         currentDayIndex = 1
         population = 8
@@ -65,5 +67,19 @@ struct SimulationState: Codable {
         activeBuild = nil
         activeBuildTotalDays = 0
         activeBuildDaysRemaining = 0
+        lastContributions = HealthContributions.zero
     }
+}
+
+public struct HealthContributions: Equatable, Codable {
+    public var stepsExplorationKm: Double = 0
+    public var passiveExplorationKm: Double = 0
+    public var exerciseBuildPoints: Double = 0
+    public var passiveBuildPoints: Double = 0
+    public var sleepScience: Double = 0
+    public var daylightScience: Double = 0
+    public var passiveScience: Double = 0
+    public var sunlightYieldMultiplier: Double = 1
+
+    public static let zero = HealthContributions()
 }
