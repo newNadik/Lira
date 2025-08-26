@@ -186,7 +186,7 @@ struct MainSceneView: View {
                         node: LirSpriteNode(),
                         height: charHeight
                     ).erased()
-                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    dialogQueue.load([DialogLine(text: LirSpriteNode.presentLine(simulationVM: vm))])
                     showDialog = true
                 case "beanie":
                     dialogQueue.characterView = NodeSpriteView(
@@ -201,14 +201,14 @@ struct MainSceneView: View {
                         node: NayaSpriteNode(),
                         height: charHeight
                     ).erased()
-                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    dialogQueue.load([DialogLine(text: NayaSpriteNode.presentLine(simulationVM: vm))])
                     showDialog = true
                 case "lune":
                     dialogQueue.characterView = NodeSpriteView(
                         node: LuneSpriteNode(),
                         height: charHeight
                     ).erased()
-                    dialogQueue.load([DialogLine(text: "Hello world!")])
+                    dialogQueue.load([DialogLine(text: LuneSpriteNode.presentLine(simulationVM: vm))])
                     showDialog = true
                 default:
                     print("Unknown character tapped: \(name)")

@@ -60,4 +60,49 @@ final class LuneSpriteNode: SKNode, SKAnimatableNode {
     func startAnimation() { startWind() }
     func stopAnimation() { stopWind() }
     var size: CGSize { body.size }
+    
+    static func presentLine(simulationVM: SimulationViewModel?) -> String {
+        guard let vm = simulationVM else {
+            return "Hi! Ready for a walk?"
+        }
+        var options: [String] = []
+        
+        options.append("Interesting..")
+        options.append("An dvantage!")
+        options.append("This will help!")
+        
+        // Core expedition chatter (always available)
+        options.append(contentsOf: [
+            "Boots on, map open - ready when you are",
+            "Every [steps_icon] we take, the map grows a little",
+            "Scouted a new path beyond the ridge - soft ground, easy going",
+            "I marked a safe shortcut around the marsh",
+            "The wind smells like pine and secrets",
+            "Trails look clear. Want to head out?",
+            "I can carry back seeds and scrap—light but useful",
+            "Found a sparkle of ore earlier; I left a cairn to find it again",
+            "If the sun holds [sun_icon], we can push a bit farther",
+            "Rest [sleep_icon] well and we’ll range wider tomorrow",
+            "Oh, hi there!"
+        ])
+
+        // Journal flavour if available
+        if let note = vm.state.eventLog.first(where: { log in
+            log.contains("🔎")
+        }) {
+            options.append("I sketched a landmark in the journal: \(note)")
+        }
+
+        // Gentle world flavour
+        options.append(contentsOf: [
+            "I like quiet trails and loud discoveries",
+            "If you bring the curiosity, I’ll bring the compass",
+            "We bring back more than resources — we bring back stories",
+            "Let’s check the map together before we go"
+        ])
+
+        options.append("I’m Lune - scout, pathfinder, and your walking companion")
+        
+        return options.randomElement() ?? "Oh, hi there!"
+    }
 }

@@ -112,6 +112,7 @@ final class BeanieSpriteNode: SKNode, SKAnimatableNode {
         options.append("Greenhouses shine brighter every day — feels like home")
         options.append("Science folks talk about stars; I just want a sturdy chair")
         options.append("Settlers will need somewhere to rest after all that [exercise_icon]")
+        options.append("Beanie reporting for duty!")
         
         // Pick one line
         return options.randomElement() ?? "Beanie reporting for duty!"

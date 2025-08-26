@@ -68,4 +68,48 @@ final class LirSpriteNode: SKNode, SKAnimatableNode {
     func startAnimation() { startWind() }
     func stopAnimation() { stopWind() }
     var size: CGSize { body.size }
+    
+    static func presentLine(simulationVM: SimulationViewModel?) -> String {
+        guard let vm = simulationVM else {
+            return "Hi visitor!"
+        }
+        var options: [String] = []
+
+        // Self-introduction / role
+        options.append("I’m Lir - keeper of our plans and curious machines")
+
+        // Science / research flavor
+        options.append(contentsOf: [
+            "Dream well; we turn [sleep_icon] into science",
+            "I filed today’s hypotheses - care to review a blueprint?",
+            "Small questions make big discoveries",
+            "The lab hums like a friendly beehive",
+            "A tidy workshop is faster than a messy genius, usually",
+            "If we log it in the journal, we can build it tomorrow"
+        ])
+
+        // Settlement oversight (general guidance)
+        options.append(contentsOf: [
+            "Shelter, food, light—keep those steady and we thrive",
+            "Greenhouses grow comfort; workshops grow possibility",
+            "I like plans that start small and finish sturdy",
+            "Let’s balance building with rest; tired minds miss simple answers [sleep_icon]",
+            "Explorers bring stories; I turn them into checklists",
+            "When in doubt, measure it twice and write it down"
+        ])
+
+        // Health-driven gentle nudges (compile-safe)
+        if vm.metrics.exerciseMinutes > 0 {
+            options.append("Your [exercise_icon] \(vm.metrics.exerciseMinutes) min sharpen thinking. The lab says thanks")
+        }
+
+        // Journal flavor if available
+        if let note = vm.state.eventLog.first(where: { log in
+            log.contains("👥")
+        }) {
+            options.append("I noted this for the council: \(note)")
+        }
+
+        return options.randomElement() ?? "Oh, hi there!"
+    }
 }

@@ -67,4 +67,44 @@ final class NayaSpriteNode: SKNode, SKAnimatableNode {
     func startAnimation() { startWind() }
     func stopAnimation() { stopWind() }
     var size: CGSize { body.size }
+        
+    static func presentLine(simulationVM: SimulationViewModel?) -> String {
+        guard let vm = simulationVM else {
+            return "Naya? Yep, that's me!"
+        }
+        var options: [String] = []
+
+        // Core greenhouse chatter (always available)
+        options.append(contentsOf: [
+            "I checked the seedlings - leaves look happy today",
+            "Water, light, patience… that’s my recipe",
+            "I talk to the sprouts. They’re good listeners",
+            "If you smell fresh basil, that’s totally me",
+            "One more tray and we’ll have a tiny jungle",
+            "Naya? Yep, that's me!",
+            "Oh, hi there!"
+        ])
+
+        // Health-driven flavour (safe checks)
+        if vm.metrics.exerciseMinutes > 0 {
+            options.append("Your [exercise_icon] \(vm.metrics.exerciseMinutes) min keeps our watering arms strong!")
+        }
+
+        // Journal flavour if available
+        if let note = vm.state.eventLog.first(where: { log in
+            log.contains("🍎")
+        }) {
+            options.append("I pressed a leaf in the journal: \(note)")
+        }
+
+        // Gentle world flavour without direct counts (keeps it compile-safe)
+        options.append(contentsOf: [
+            "More [sun_icon] makes sweeter tomatoes",
+            "I saved a corner for herbs",
+            "Promise to visit later? The cucumbers love an audience",
+            "If you walk a bit more [steps_icon], I’ll plant a victory carrot"
+        ])
+
+        return options.randomElement() ?? "Oh, hi there!"
+    }
 }
