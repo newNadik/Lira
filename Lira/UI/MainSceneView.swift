@@ -177,6 +177,20 @@ struct MainSceneView: View {
                     welcomeSeen = true
                 }
             }
+            scene.onCharacterTapped = { name in
+                switch name {
+                case "lir":
+                    print("Player tapped!")
+                case "beanie":
+                    print("Player tapped!")
+                case "naya":
+                    print("Player tapped!")
+                case "lune":
+                    print("Player tapped!")
+                default:
+                    print("Unknown character tapped: \(name)")
+                }
+            }
         }
     }
 }

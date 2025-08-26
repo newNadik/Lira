@@ -10,6 +10,17 @@ final class ScrollableBackgroundScene: SKScene {
     private var lastTouchTime: TimeInterval?
     private var isDragging = false
 
+    // Tap vs. drag discrimination
+    private var dragAccumulated: CGFloat = 0
+    private let tapDragThreshold: CGFloat = 12 // in scene points
+
+    // Character tap callback and references
+    var onCharacterTapped: ((String) -> Void)?
+    private weak var lirNode: SKNode?
+    private weak var beanieNode: SKNode?
+    private weak var nayaNode: SKNode?
+    private weak var luneNode: SKNode?
+
     // Camera smoothing/inertia
     private var targetCamX: CGFloat = 0
     private var camVelocity: CGFloat = 0 // points/sec in scene space
@@ -103,6 +114,7 @@ final class ScrollableBackgroundScene: SKScene {
         lastTouchTime = touch.timestamp
         isDragging = true
         camVelocity = 0 // stop inertia while dragging
+        dragAccumulated = 0
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -116,6 +128,7 @@ final class ScrollableBackgroundScene: SKScene {
         // We fit by height, so X scale equals Y scale.
         let scenePerPoint = size.height / skView.bounds.height
         let dxScene = dxView * scenePerPoint
+        dragAccumulated += abs(dxScene)
 
         // Update target position (grab world)
         targetCamX -= dxScene
@@ -129,12 +142,26 @@ final class ScrollableBackgroundScene: SKScene {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        isDragging = false
-        lastTouchX = nil
-        lastTouchTime = nil
+        defer {
+            isDragging = false
+            lastTouchX = nil
+            lastTouchTime = nil
+        }
+        guard let touch = touches.first else { return }
+
+        // If the user didn't drag much, treat as a tap.
+        if dragAccumulated < tapDragThreshold {
+            let location = touch.location(in: self)
+            if let tapped = characterSprite(at: location) {
+                if let name = tapped.name, name.hasPrefix("character:") {
+                    onCharacterTapped?(String(name.dropFirst("character:".count)))
+                }
+            }
+        }
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        dragAccumulated = 0
         isDragging = false
         lastTouchX = nil
         lastTouchTime = nil
@@ -182,23 +209,52 @@ final class ScrollableBackgroundScene: SKScene {
         
         let lir = LirSpriteNode()
         lir.setHeight(characterHeight)
+        lir.name = "character:lir"
+        lirNode = lir
         lir.position = CGPoint(x: width * 0.65, y: height * -0.05)
         addChild(lir)
                 
         let beanie = BeanieSpriteNode()
         beanie.setHeight(characterHeight)
+        beanie.name = "character:beanie"
+        beanieNode = beanie
         beanie.position = CGPoint(x: width * -0.5, y: height * -0.07)
         addChild(beanie)
         
         let naya = NayaSpriteNode()
         naya.setHeight(characterHeight)
+        naya.name = "character:naya"
+        nayaNode = naya
         naya.position = CGPoint(x: width * 0.04, y: height * 0.17)
         addChild(naya)
         
         
         let lune = LuneSpriteNode()
         lune.setHeight(characterHeight)
+        lune.name = "character:lune"
+        luneNode = lune
         lune.position = CGPoint(x: width * 0.025, y: height * -0.18)
         addChild(lune)
     }
+    
+    // MARK: - Hit testing helpers
+    private func characterSprite(at point: CGPoint) -> SKNode? {
+        // Prefer topmost node with a character: name
+        for node in nodes(at: point).reversed() {
+            if let sprite = characterNode(from: node) { return sprite }
+        }
+        return nil
+    }
+
+    private func characterNode(from node: SKNode) -> SKNode? {
+        var current: SKNode? = node
+        while let n = current {
+            if let name = n.name, name.hasPrefix("character:"), let sprite = n as? SKNode {
+                return sprite
+            }
+            current = n.parent
+        }
+        return nil
+    }
+
 }

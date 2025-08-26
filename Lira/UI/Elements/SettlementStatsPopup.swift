@@ -145,20 +145,20 @@ struct SettlementStatsPopup: View {
             // Inline health-driven +value tags (simple and title-based)
             if title == "Explored radius" {
                 let c = state.lastContributions
-                if c.stepsExplorationKm > 0 {
+                if c.stepsExplorationKm > 0.1 {
                     deltaTag(icon: "steps_icon", text: "+\(format(c.stepsExplorationKm, asInt: false)) km")
                 }
             } else if title == "Science points" {
                 let c = state.lastContributions
-                if c.sleepScience > 0 {
+                if c.sleepScience > 0.1 {
                     deltaTag(icon: "sleep_icon", text: "+\(format(c.sleepScience, asInt: false))")
                 }
-                if c.daylightScience > 0 {
+                if c.daylightScience > 0.1 {
                     deltaTag(icon: "sun_icon", text: "+\(format(c.daylightScience, asInt: false))")
                 }
             } else if title == "Build points" {
                 let c = state.lastContributions
-                if c.exerciseBuildPoints > 0 {
+                if c.exerciseBuildPoints > 0.1 {
                     deltaTag(icon: "exercise_icon", text: "+\(format(c.exerciseBuildPoints, asInt: false))")
                 }
             }

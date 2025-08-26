@@ -105,11 +105,11 @@ enum EventGenerator {
     // MARK: Prologue / Start-of-game
     /// Call this once on the first playable day to seed a welcoming journal.
     static func prologue(day: Int, state: inout SimulationState) {
-        push(day: day, kind: .narrative, body: "Touchdown successful. Instruments nominal.", into: &state)
-        push(day: day, kind: .construction, body: "Raised first shelter and set a small campfire.", into: &state)
+        push(day: day, kind: .narrative, body: "Touchdown successful. Instruments nominal", into: &state)
+        push(day: day, kind: .construction, body: "Raised first shelter and set a small campfire", into: &state)
         // Unpack two random supply items for flavor
         if let a = starterSupplies.randomElement(), let b = starterSupplies.filter({ $0 != a }).randomElement() {
-            push(day: day, kind: .general, body: "Unpacked \(join(a, b)).", into: &state)
+            push(day: day, kind: .general, body: "Unpacked \(join(a, b))", into: &state)
         }
         push(day: day, kind: .construction, body: "Started building a greenhouse", into: &state)
     }
@@ -117,28 +117,28 @@ enum EventGenerator {
     /// First night flavor
     static func firstNight(day: Int, state: inout SimulationState) {
         if let sky = skyPhenomena.randomElement() {
-            push(day: day, kind: .narrative, body: "Camp quiet. We watched \(sky).", into: &state)
+            push(day: day, kind: .narrative, body: "Camp quiet. We watched \(sky)", into: &state)
         }
     }
 
     // MARK: Exploration
     static func explorationDaily(day: Int, deltaKm: Double, totalKm: Double, state: inout SimulationState) {
-        var msg = String(format: "Explored surroundings (+%.2f km, total %.2f km).", deltaKm, totalKm)
+        var msg = String(format: "Explored surroundings (+%.2f km, total %.2f km)", deltaKm, totalKm)
         if Int.random(in: 0..<100) < 35,
            let item = discoveryItems.randomElement(),
            let verb = discoveryVerbs.randomElement() {
-            msg += " \(verb.capitalized) \(item)."
+            msg += " \(verb.capitalized) \(item)"
         }
         push(day: day, kind: .exploration, body: msg, into: &state)
     }
     
     static func explorationMilestone(day: Int, km: Int, state: inout SimulationState) {
-        push(day: day, kind: .milestone, body: "Scouted out to \(km) km.", into: &state)
+        push(day: day, kind: .milestone, body: "Scouted out to \(km) km", into: &state)
     }
     
     // MARK: Construction
     static func constructionProgress(day: Int, displayName: String, percent: Int, state: inout SimulationState) {
-        push(day: day, kind: .construction, body: "Construction underway: \(displayName) \(percent)% complete.", into: &state)
+        push(day: day, kind: .construction, body: "Construction underway: \(displayName) \(percent)% complete", into: &state)
     }
     
     static func constructionProgress(day: Int, kind: BuildKind, percent: Int, state: inout SimulationState) {
@@ -146,66 +146,66 @@ enum EventGenerator {
     }
     
     static func builtHouse(day: Int, state: inout SimulationState, displayName: String = "House", bedsAdded: Int) {
-        push(day: day, kind: .construction, body: "Built a \(displayName) (+\(bedsAdded) beds).", into: &state)
+        push(day: day, kind: .construction, body: "Built a \(displayName) (+\(bedsAdded) beds)", into: &state)
     }
     
     static func builtGreenhouse(day: Int, state: inout SimulationState, displayName: String = "Greenhouse") {
-        push(day: day, kind: .construction, body: "Built a \(displayName) (+food).", into: &state)
+        push(day: day, kind: .construction, body: "Built a \(displayName) (+food)", into: &state)
     }
     
     static func openedSchool(day: Int, state: inout SimulationState, displayName: String = "School") {
-        push(day: day, kind: .construction, body: "Opened a \(displayName) (+Tech).", into: &state)
+        push(day: day, kind: .construction, body: "Opened a \(displayName) (+Tech)", into: &state)
     }
     
     // MARK: Science
     static func breakthrough(day: Int, techLevel: Int, state: inout SimulationState) {
-        var message = "Breakthrough! Tech is now \(techLevel)."
+        var message = "Breakthrough! Tech is now \(techLevel)"
         if let discoveries = techDiscoveries[techLevel], let item = discoveries.randomElement() {
-            message += " Mastered: \(item)."
+            message += " Mastered: \(item)"
         }
         push(day: day, kind: .research, body: message, into: &state)
     }
     
     // MARK: Population
     static func arrivals(day: Int, count: Int, state: inout SimulationState) {
-        push(day: day, kind: .population, body: "New arrivals: +\(count) Liri.", into: &state)
+        push(day: day, kind: .population, body: "New arrivals: +\(count) Liri", into: &state)
     }
     
     static func growthPausedForFood(day: Int, state: inout SimulationState) {
-        push(day: day, kind: .capacity, body: "Growth paused due to food shortage.", into: &state)
+        push(day: day, kind: .capacity, body: "Growth paused due to food shortage", into: &state)
     }
     
     static func constructionPlanned(day: Int, name: String, state: inout SimulationState) {
-        push(day: day, kind: .construction, body: "Queued: \(name).", into: &state)
+        push(day: day, kind: .construction, body: "Queued: \(name)", into: &state)
     }
 
     static func constructionStarted(day: Int, name: String, days: Int, state: inout SimulationState) {
-        push(day: day, kind: .construction, body: "Started building \(name), estimated \(days) days to complete.", into: &state)
+        push(day: day, kind: .construction, body: "Started building \(name), estimated \(days) days to complete", into: &state)
     }
     
     static func researchProgress(day: Int, percent: Int, state: inout SimulationState) {
-        push(day: day, kind: .research, body: "Research is advancing — \(percent)% complete.", into: &state)
+        push(day: day, kind: .research, body: "Research is advancing — \(percent)% complete", into: &state)
     }
     
     // MARK: Surplus & Capacity Events
     static func foodSurplus(day: Int, surplus: Int, state: inout SimulationState) {
-        push(day: day, kind: .resources, body: "Surplus food detected (+\(surplus) units).", into: &state)
+        push(day: day, kind: .resources, body: "Surplus food detected (+\(surplus) units)", into: &state)
     }
     
     static func housingSurplus(day: Int, surplusBeds: Int, state: inout SimulationState) {
-        push(day: day, kind: .capacity, body: "Extra housing available (+\(surplusBeds) beds).", into: &state)
+        push(day: day, kind: .capacity, body: "Extra housing available (+\(surplusBeds) beds)", into: &state)
     }
     
     static func populationCapReached(day: Int, state: inout SimulationState) {
-        push(day: day, kind: .capacity, body: "Population growth halted — housing at capacity.", into: &state)
+        push(day: day, kind: .capacity, body: "Population growth halted — housing at capacity", into: &state)
     }
     
     static func idleBuilders(day: Int, state: inout SimulationState) {
-        push(day: day, kind: .construction, body: "Builders idle — no projects in queue.", into: &state)
+        push(day: day, kind: .construction, body: "Builders idle — no projects in queue", into: &state)
     }
     
     static func greenhouseLimitReached(day: Int, state: inout SimulationState) {
-        push(day: day, kind: .capacity, body: "Greenhouse per capita target reached.", into: &state)
+        push(day: day, kind: .capacity, body: "Greenhouse per capita target reached", into: &state)
     }
     
     static func generalInfo(day: Int, message: String, state: inout SimulationState) {
@@ -216,17 +216,17 @@ enum EventGenerator {
     /// Light-weather note that makes the world feel alive.
     static func weatherUpdate(day: Int, state: inout SimulationState) {
         if Int.random(in: 0..<100) < 70, let note = weatherSnippets.randomElement() {
-            push(day: day, kind: .environment, body: note + ".", into: &state)
+            push(day: day, kind: .environment, body: note, into: &state)
         }
     }
 
     /// Occasional warning to add drama without gameplay effect (can be hooked later).
     static func minorWarning(day: Int, state: inout SimulationState) {
         let warnings = [
-            "Dust gusts expected by evening.",
-            "Watch for loose walkway planks near the river.",
-            "Conserve lantern oil — shipment delayed.",
-            "Radio static increasing around the ridge."
+            "Dust gusts expected by evening",
+            "Watch for loose walkway planks near the river",
+            "Conserve lantern oil — shipment delayed",
+            "Radio static increasing around the ridge"
         ]
         if let w = warnings.randomElement() { push(day: day, kind: .warning, body: w, into: &state) }
     }
@@ -234,7 +234,7 @@ enum EventGenerator {
     /// Flavor: locals, critters, and small discoveries.
     static func rumor(day: Int, state: inout SimulationState) {
         if let r = localFaunaRumors.randomElement() {
-            push(day: day, kind: .narrative, body: "Report: \(r).", into: &state)
+            push(day: day, kind: .narrative, body: "Report: \(r)", into: &state)
         }
     }
 
