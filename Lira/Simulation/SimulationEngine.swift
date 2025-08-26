@@ -2,6 +2,11 @@ import Foundation
 
 struct SimulationEngine {
     var tuning = SimTuning()
+    // Local scalars to further decouple stats without touching global SimTuning
+    private let explorationPassiveScale: Double = 0.5     // ↓ passive exploration weight
+    private let explorationStepsScale: Double = 1.5       // ↑ steps-driven exploration weight
+    private let daylightSciencePerHour: Double = 0.2      // science gained per hour of daylight
+    private let daylightScienceCapPerDay: Double = 0.8    // cap daylight contribution per (sim) day
     private var buildDayAccumulator: Double = 0 // accumulates fractional days for construction
     init() {}
 
@@ -36,7 +41,7 @@ struct SimulationEngine {
 
         // --- HEALTH INFLUENCES (interpret deltas for partial updates) ---
         // Steps/exercise are treated as deltas since the previous tick.
-        let explorationDeltaFromSteps = tuning.explorationPerSqrtSteps * sqrt(max(healthDeltas.steps, 0) / 1000.0)
+        let explorationDeltaFromSteps = explorationStepsScale * tuning.explorationPerSqrtSteps * sqrt(max(healthDeltas.steps, 0) / 1000.0)
         let sunlightMultiplierRaw = 1 + tuning.sunlightMultiplierAlpha * (healthDeltas.daylightMinutes / (healthDeltas.daylightMinutes + tuning.sunlightHalfSaturationMinutes))
         let sunlightMultiplier = max(1.0, sunlightMultiplierRaw) // never penalize zero daylight
         let buildPointGainFromExercise = tuning.buildPerSqrtExercise * sqrt(max(healthDeltas.exerciseMinutes, 0))
@@ -50,7 +55,7 @@ struct SimulationEngine {
         _ = state.buildPoints
 
         // 2) Exploration (passive per-day scaled by f + steps delta + tech bonus)
-        let explorationToday = (tuning.passiveExplorationKmPerDay * f) + explorationDeltaFromSteps
+        let explorationToday = (tuning.passiveExplorationKmPerDay * explorationPassiveScale * f) + explorationDeltaFromSteps
         state.exploredRadiusKm += explorationToday * (1 + tuning.explorationTechMultiplierPerLevel * state.technologyLevel)
 
         // Milestone: whole-km crossings (handle multiple in a partial)
@@ -210,7 +215,10 @@ struct SimulationEngine {
         }
 
         // 5) Science (passive per-day scaled by f + sleep drip + tech bonus)
-        state.sciencePoints += (tuning.passiveSciencePointsPerDay * f + sciencePointGainFromSleep) * (1 + tuning.scienceTechBonusPerLevel * state.technologyLevel)
+        // Small daylight-driven science drip, capped per day to avoid overpowering sleep
+        let daylightHours = max(0.0, healthDeltas.daylightMinutes) / 60.0
+        let daylightScience = min(daylightScienceCapPerDay, daylightSciencePerHour * daylightHours) * f
+        state.sciencePoints += (tuning.passiveSciencePointsPerDay * f + sciencePointGainFromSleep + daylightScience) * (1 + tuning.scienceTechBonusPerLevel * state.technologyLevel)
         if state.sciencePoints >= tuning.scienceBreakthroughThreshold {
             state.sciencePoints -= tuning.scienceBreakthroughThreshold
             state.technologyLevel += 1
