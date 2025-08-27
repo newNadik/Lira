@@ -20,11 +20,11 @@ struct MainSceneView: View {
     var charHeight = UIDevice.current.userInterfaceIdiom == .pad ? 600.0 : 400.0
     
     var body: some View {
-
+        
         ZStack(alignment: .top) {
             SpriteView(scene: scene, preferredFramesPerSecond: 60, options: [.ignoresSiblingOrder])
                 .ignoresSafeArea()
-
+            
             VStack(alignment: .trailing) {
                 HStack{
                     Text("• Day \(vm.state.currentDayIndex)")
@@ -55,7 +55,7 @@ struct MainSceneView: View {
                         .padding(.horizontal, 10)
                 }
                 Spacer()
-
+                
                 VStack(alignment: .trailing, spacing: 10) {
                     Button {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.9, blendDuration: 0.2)) {
@@ -70,7 +70,7 @@ struct MainSceneView: View {
                     }
                     .buttonStyle(IconChipButtonStyle())
                     .accessibilityLabel("Open journal")
-
+                    
                     Button {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.9, blendDuration: 0.2)) {
                             showStats.toggle()
@@ -105,7 +105,7 @@ struct MainSceneView: View {
                     }
                 }
                 .zIndex(10)
-
+            
             PopupWrapper(isPresented: showJournal, z: 20) {
                 JournalPopup(
                     events: vm.state.eventLog,
@@ -113,7 +113,7 @@ struct MainSceneView: View {
                     onClose: { withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { showJournal = false } }
                 )
             }
-
+            
             PopupWrapper(isPresented: showSettings, z: 30) {
                 SettingsPopup(
                     isMuted: (UserDefaults.standard.object(forKey: "audio.musicMuted") as? Bool) ?? false,
@@ -129,14 +129,14 @@ struct MainSceneView: View {
                     onClose: { withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { showSettings = false } }
                 )
             }
-
+            
             PopupWrapper(isPresented: showStats, z: 25) {
                 SettlementStatsPopup(
                     state: vm.state,
                     onClose: { withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { showStats = false } }
                 )
             }
-
+            
             // Dialog overlay (on top of all popups)
             if showDialog {
                 DialogHost(
@@ -196,7 +196,7 @@ struct MainSceneView: View {
                     ).erased()
                     dialogQueue.load([DialogLine(text: BeanieSpriteNode.presentLine(simulationVM: vm))])
                     showDialog = true
-                
+                    
                 case "naya":
                     dialogQueue.characterView = NodeSpriteView(
                         node: NayaSpriteNode(),
@@ -216,7 +216,67 @@ struct MainSceneView: View {
                 }
             }
             scene.onBuildingTapped = { name in
-                print("Tapped: \(name)")
+                switch name {
+                case "greenhouse":
+                    var text = "🌿 Greenhouses are humming\n• \(Int(vm.state.greenhouseCount)) \(Int(vm.state.greenhouseCount) == 1 ? "is" : "are") running, with \(Int(vm.state.foodStockRations)) food rations in stock"
+                    if vm.state.activeBuild?.kind == .greenhouse {
+                        text.append("\n\nA \(vm.state.activeBuild?.displayName ?? "Greenhouse") is under construction")
+                        if vm.state.activeBuildDaysRemaining > 0 {
+                            text.append(" and should be done within \(vm.state.activeBuildDaysRemaining) days")
+                        }
+                    }
+                    if vm.state.buildQueue.contains(where: { item in
+                        item.kind == .greenhouse
+                    }) {
+                        text.append("\n\nAnd a new \(vm.state.activeBuild?.displayName ?? "Greenhouse") is scheduled for construction")
+                    }
+                    dialogQueue.characterView = NodeSpriteView(
+                        node: NayaSpriteNode(),
+                        height: charHeight
+                    ).erased()
+                    dialogQueue.load([DialogLine(text: text)])
+                    showDialog = true
+                case "science":
+                    var text = "🧪 Science report \n• \(Int(vm.state.schoolCount)) \(Int(vm.state.schoolCount) == 1 ? "center is" : "centers are") running"
+                    if vm.state.activeBuild?.kind == .school {
+                        text.append("\n\nA \(vm.state.activeBuild?.displayName ?? "Science center") is under construction")
+                        if vm.state.activeBuildDaysRemaining > 0 {
+                            text.append(" and should be done within \(vm.state.activeBuildDaysRemaining) days")
+                        }
+                    }
+                    if vm.state.buildQueue.contains(where: { item in
+                        item.kind == .school
+                    }) {
+                        text.append("\n\nAnd a new \(vm.state.activeBuild?.displayName ?? "Science center") is scheduled for construction")
+                    }
+                    dialogQueue.characterView = NodeSpriteView(
+                        node: LirSpriteNode(),
+                        height: charHeight
+                    ).erased()
+                    dialogQueue.load([DialogLine(text: text)])
+                    showDialog = true
+                case "house":
+                    var text = "🏠 Housing check \n• \(Int(vm.state.housingCapacity)) beds in total"
+                    if vm.state.activeBuild?.kind == .house {
+                        text.append("\n\nA \(vm.state.activeBuild?.displayName ?? "House") is under construction")
+                        if vm.state.activeBuildDaysRemaining > 0 {
+                            text.append(" and should be done within \(vm.state.activeBuildDaysRemaining) days")
+                        }
+                    }
+                    if vm.state.buildQueue.contains(where: { item in
+                        item.kind == .house
+                    }) {
+                        text.append("\n\nAnd a new \(vm.state.activeBuild?.displayName ?? "House") is scheduled for construction")
+                    }
+                    dialogQueue.characterView = NodeSpriteView(
+                        node: BeanieSpriteNode(),
+                        height: charHeight
+                    ).erased()
+                    dialogQueue.load([DialogLine(text: text)])
+                    showDialog = true
+                default:
+                    print("Unknown character tapped: \(name)")
+                }
             }
         }
     }
