@@ -214,6 +214,9 @@ struct MainSceneView: View {
                     print("Unknown character tapped: \(name)")
                 }
             }
+            scene.onBuildingTapped = { name in
+                print("Tapped: \(name)")
+            }
         }
     }
 }

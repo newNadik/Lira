@@ -288,15 +288,34 @@ final class ScrollableBackgroundScene: SKScene {
                               position: CGPoint(x: width * -0.75, y: height * -0.02)))
         addChild(makeBuilding(imageName: "house", height: 120, id: "house",
                               position: CGPoint(x: width * -0.57, y: height * 0.07)))
+//        
+//        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
+//                              position: CGPoint(x: width * -1.1, y: height * -0.04)))
+//        
+//        addChild(makeConstruction(id: "house", position: CGPoint(x: width * -1, y: height * 0.09)))
+//        
+//        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
+//                              position: CGPoint(x: width * -1.28, y: height * 0.05)))
+//        
+//        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
+//                              position: CGPoint(x: width * -0.85, y: height * 0.09)))
+
+    }
+    
+    func makeConstruction(id: String,
+                          position: CGPoint) -> SKSpriteNode {
+        let sprite = DustSprite()
+        sprite.setHeight(240)
+        sprite.position = position
+        sprite.name = "building:\(id)"
         
-        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
-                              position: CGPoint(x: width * -1.1, y: height * -0.04)))
+        // Each new building goes behind the previous one
+        sprite.zPosition = ScrollableBackgroundScene.nextBuildingZ
+        ScrollableBackgroundScene.nextBuildingZ -= 1
+            
+        sprite.startAnimation()
         
-        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
-                              position: CGPoint(x: width * -1.28, y: height * 0.05)))
-        
-        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
-                              position: CGPoint(x: width * -0.85, y: height * 0.09)))
+        return sprite
     }
     
     func makeBuilding(imageName: String,
