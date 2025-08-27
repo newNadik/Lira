@@ -179,6 +179,7 @@ struct MainSceneView: View {
                     welcomeSeen = true
                 }
             }
+            scene.vm = vm
             scene.onCharacterTapped = { name in
                 switch name {
                 case "lir":

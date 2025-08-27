@@ -18,6 +18,8 @@ final class ScrollableBackgroundScene: SKScene {
     var onCharacterTapped: ((String) -> Void)?
     // Building tap callback
     var onBuildingTapped: ((String) -> Void)?
+    var vm: SimulationViewModel?
+    
     private weak var lirNode: SKNode?
     private weak var beanieNode: SKNode?
     private weak var nayaNode: SKNode?
@@ -286,41 +288,62 @@ final class ScrollableBackgroundScene: SKScene {
                               position: CGPoint(x: width * -0.75, y: height * -0.02), zPosition: -5))
         addChild(makeBuilding(imageName: "house", height: 120, id: "house",
                               position: CGPoint(x: width * -0.57, y: height * 0.07), zPosition: -6))
-////
-//        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
-//                              position: CGPoint(x: width * -1.1, y: height * -0.04), zPosition: -7))
-//
-//        addChild(makeConstruction(id: "house", position: CGPoint(x: width * -1, y: height * 0.09), zPosition: -8))
-//
-//        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
-//                              position: CGPoint(x: width * -1.28, y: height * 0.05), zPosition: -9))
-//
-//        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
-//                              position: CGPoint(x: width * -0.85, y: height * 0.09), zPosition: -10))
+        
+        if (vm?.state.housingCapacity ?? 0) > 15 {
+                    addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
+                                          position: CGPoint(x: width * -1.1, y: height * -0.04), zPosition: -7))
+        }
+
+        if vm?.state.activeBuild?.kind == .house {
+            addChild(makeConstruction(id: "house", position: CGPoint(x: width * -1, y: height * 0.09), zPosition: -8))
+        }
+        
+        if (vm?.state.housingCapacity ?? 0) > 20 {
+            addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
+                                  position: CGPoint(x: width * -1.28, y: height * 0.05), zPosition: -9))
+        }
+        
+        if (vm?.state.housingCapacity ?? 0) > 25 {
+            addChild(makeBuilding(imageName: "house", height: 120, id: "house",
+                                  position: CGPoint(x: width * -0.85, y: height * 0.09), zPosition: -10))
+        }
         
         /// GREENHOUSES
         addChild(makeBuilding(imageName: "greenhouse", height: 160, id: "greenhouse",
                               position: CGPoint(x: width * -0.23, y: height * 0.21), zPosition: -5))
         
-//        addChild(makeBuilding(imageName: "greenhouse_big", height: 200, id: "greenhouse",
-//                              position: CGPoint(x: width * 0.13, y: height * 0.31), zPosition: -6))
+        if (vm?.state.greenhouseCount ?? 0) > 1 {
+            addChild(makeBuilding(imageName: "greenhouse_big", height: 200, id: "greenhouse",
+                                  position: CGPoint(x: width * 0.13, y: height * 0.31), zPosition: -6))
+        }
+        
+        if vm?.state.activeBuild?.kind == .greenhouse {
+            addChild(makeConstruction(id: "greenhouse", position: CGPoint(x: width * -0.07, y: height * 0.33), zPosition: -7))
+        }
 //
-//        addChild(makeConstruction(id: "greenhouse", position: CGPoint(x: width * -0.07, y: height * 0.33), zPosition: -7))
-//
-//
-//        addChild(makeBuilding(imageName: "greenhouse", height: 160, id: "greenhouse",
-//                              position: CGPoint(x: width * -0.25, y: height * 0.35), zPosition: -8))
+        if (vm?.state.greenhouseCount ?? 0) > 3 {
+            addChild(makeBuilding(imageName: "greenhouse", height: 160, id: "greenhouse",
+                                  position: CGPoint(x: width * -0.25, y: height * 0.35), zPosition: -8))
+        }
         
         /// SCHOOLS
-        addChild(makeBuilding(imageName: "science", height: 180, id: "science",
-                              position: CGPoint(x: width * 0.55, y: height * 0.14), zPosition: -6))
-//        addChild(makeBuilding(imageName: "science_big", height: 220, id: "science",
-//                              position: CGPoint(x: width * 1, y: height * 0.04), zPosition: -5))
-//
-//        addChild(makeConstruction(id: "science", position: CGPoint(x: width * 0.91, y: height * 0.17), zPosition: -7))
-//
-//        addChild(makeBuilding(imageName: "science", height: 180, id: "science",
-//                              position: CGPoint(x: width * 0.95, y: height * 0.25), zPosition: -8))
+        if (vm?.state.schoolCount ?? 0) > 0 {
+            addChild(makeBuilding(imageName: "science", height: 180, id: "science",
+                                  position: CGPoint(x: width * 0.55, y: height * 0.14), zPosition: -6))
+        }
+        if (vm?.state.schoolCount ?? 0) > 1 {
+            addChild(makeBuilding(imageName: "science_big", height: 220, id: "science",
+                                  position: CGPoint(x: width * 1, y: height * 0.04), zPosition: -5))
+        }
+        
+        if vm?.state.activeBuild?.kind == .school {
+            addChild(makeConstruction(id: "science", position: CGPoint(x: width * 0.91, y: height * 0.17), zPosition: -7))
+        }
+        
+        if (vm?.state.schoolCount ?? 0) > 2 {
+            addChild(makeBuilding(imageName: "science", height: 180, id: "science",
+                                  position: CGPoint(x: width * 0.95, y: height * 0.25), zPosition: -8))
+        }
     }
     
     func makeConstruction(id: String,
