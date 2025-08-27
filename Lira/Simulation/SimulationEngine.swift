@@ -37,7 +37,7 @@ struct SimulationEngine {
                                        fractionOfDay f: Double,
                                        emitDailySummary: Bool = false) {
         
-        if state.currentDayIndex == 1 && !UserDefaults.standard.bool(forKey: "firstDayEvent"){
+        if !UserDefaults.standard.bool(forKey: "firstDayEvent"){
             EventGenerator.autoDaily(day: state.currentDayIndex, state: &state)
             UserDefaults.standard.set(true, forKey: "firstDayEvent")
         }

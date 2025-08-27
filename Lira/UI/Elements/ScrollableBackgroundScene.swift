@@ -28,9 +28,6 @@ final class ScrollableBackgroundScene: SKScene {
     private var camVelocity: CGFloat = 0 // points/sec in scene space
     private var lastUpdateTime: TimeInterval = 0
 
-    // Building layering
-    private static var nextBuildingZ: CGFloat = -3
-
     // Content sizing
     private let imgWidth: CGFloat = 2648
     private let imgHeight: CGFloat = 2048
@@ -286,45 +283,56 @@ final class ScrollableBackgroundScene: SKScene {
         
         /// HOUSES
         addChild(makeBuilding(imageName: "house", height: 120, id: "house",
-                              position: CGPoint(x: width * -0.75, y: height * -0.02)))
+                              position: CGPoint(x: width * -0.75, y: height * -0.02), zPosition: -5))
         addChild(makeBuilding(imageName: "house", height: 120, id: "house",
-                              position: CGPoint(x: width * -0.57, y: height * 0.07)))
-//        
+                              position: CGPoint(x: width * -0.57, y: height * 0.07), zPosition: -6))
+////
 //        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
-//                              position: CGPoint(x: width * -1.1, y: height * -0.04)))
-//        
-//        addChild(makeConstruction(id: "house", position: CGPoint(x: width * -1, y: height * 0.09)))
-//        
+//                              position: CGPoint(x: width * -1.1, y: height * -0.04), zPosition: -7))
+//
+//        addChild(makeConstruction(id: "house", position: CGPoint(x: width * -1, y: height * 0.09), zPosition: -8))
+//
 //        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
-//                              position: CGPoint(x: width * -1.28, y: height * 0.05)))
-//        
+//                              position: CGPoint(x: width * -1.28, y: height * 0.05), zPosition: -9))
+//
 //        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
-//                              position: CGPoint(x: width * -0.85, y: height * 0.09)))
+//                              position: CGPoint(x: width * -0.85, y: height * 0.09), zPosition: -10))
         
         /// GREENHOUSES
         addChild(makeBuilding(imageName: "greenhouse", height: 160, id: "greenhouse",
-                              position: CGPoint(x: width * -0.23, y: height * 0.21)))
+                              position: CGPoint(x: width * -0.23, y: height * 0.21), zPosition: -5))
         
 //        addChild(makeBuilding(imageName: "greenhouse_big", height: 200, id: "greenhouse",
-//                              position: CGPoint(x: width * 0.13, y: height * 0.31)))
-//        
-//        addChild(makeConstruction(id: "greenhouse", position: CGPoint(x: width * -0.07, y: height * 0.33)))
-//        
-//        
+//                              position: CGPoint(x: width * 0.13, y: height * 0.31), zPosition: -6))
+//
+//        addChild(makeConstruction(id: "greenhouse", position: CGPoint(x: width * -0.07, y: height * 0.33), zPosition: -7))
+//
+//
 //        addChild(makeBuilding(imageName: "greenhouse", height: 160, id: "greenhouse",
-//                              position: CGPoint(x: width * -0.25, y: height * 0.35)))
+//                              position: CGPoint(x: width * -0.25, y: height * 0.35), zPosition: -8))
+        
+        /// SCHOOLS
+        addChild(makeBuilding(imageName: "science", height: 180, id: "science",
+                              position: CGPoint(x: width * 0.55, y: height * 0.14), zPosition: -6))
+//        addChild(makeBuilding(imageName: "science_big", height: 220, id: "science",
+//                              position: CGPoint(x: width * 1, y: height * 0.04), zPosition: -5))
+//
+//        addChild(makeConstruction(id: "science", position: CGPoint(x: width * 0.91, y: height * 0.17), zPosition: -7))
+//
+//        addChild(makeBuilding(imageName: "science", height: 180, id: "science",
+//                              position: CGPoint(x: width * 0.95, y: height * 0.25), zPosition: -8))
     }
     
     func makeConstruction(id: String,
-                          position: CGPoint) -> SKSpriteNode {
+                          position: CGPoint,
+                          zPosition: CGFloat) -> SKSpriteNode {
         let sprite = DustSprite()
         sprite.setHeight(240)
         sprite.position = position
         sprite.name = "building:\(id)"
         
         // Each new building goes behind the previous one
-        sprite.zPosition = ScrollableBackgroundScene.nextBuildingZ
-        ScrollableBackgroundScene.nextBuildingZ -= 1
+        sprite.zPosition = zPosition
             
         sprite.startAnimation()
         
@@ -334,7 +342,8 @@ final class ScrollableBackgroundScene: SKScene {
     func makeBuilding(imageName: String,
                       height: CGFloat,
                       id: String,
-                      position: CGPoint) -> SKSpriteNode {
+                      position: CGPoint,
+                      zPosition: CGFloat) -> SKSpriteNode {
         
         let texture = SKTexture(imageNamed: imageName)
         let sprite = SKSpriteNode(texture: texture)
@@ -343,12 +352,24 @@ final class ScrollableBackgroundScene: SKScene {
         let aspect = texture.size().width / texture.size().height
         sprite.size = CGSize(width: height * aspect, height: height)
         
+        
+        let tints: [UIColor] = [
+            UIColor(red: 1.00, green: 0.96, blue: 0.90, alpha: 1.0), // warm cream
+            UIColor(red: 0.92, green: 0.98, blue: 0.92, alpha: 1.0), // pale mint
+            UIColor(red: 0.92, green: 0.94, blue: 1.00, alpha: 1.0), // soft blue
+            UIColor(red: 0.96, green: 0.92, blue: 1.00, alpha: 1.0)  // light lilac
+        ]
+        let index = (0 - Int(zPosition)) % tints.count
+        let tint = tints[index]
+        let blend = 0.7
+        sprite.color = tint
+        sprite.colorBlendFactor = blend
+        
         sprite.position = position
         sprite.name = "building:\(id)"
         
         // Each new building goes behind the previous one
-        sprite.zPosition = ScrollableBackgroundScene.nextBuildingZ
-        ScrollableBackgroundScene.nextBuildingZ -= 1
+        sprite.zPosition = zPosition
         
         addShadow(to: sprite, color: UIColor(named: "brown") ?? .black)
         
@@ -379,4 +400,3 @@ final class ScrollableBackgroundScene: SKScene {
     }
     
 }
-
