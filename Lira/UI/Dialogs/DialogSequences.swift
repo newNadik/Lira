@@ -19,6 +19,7 @@ extension DialogLine {
                 ],
                 allowTapToAdvance: false
             ),
+            DialogLine(text: "•••"),
             DialogLine(text: "Great! Feel free to look around the settlement — explore the city, open the Journal, and check stats",
                        buttons: [
                            DialogChoice(title: "Done", role: .primary, action: onDone)

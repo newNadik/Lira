@@ -5,10 +5,25 @@ struct SimulationEngine {
     var tuning = SimTuning()
     // Local scalars to further decouple stats without touching global SimTuning
     private let explorationPassiveScale: Double = 0.5     // ↓ passive exploration weight
-    private let explorationStepsScale: Double = 1.5       // ↑ steps-driven exploration weight
     private let daylightSciencePerHour: Double = 0.2      // science gained per hour of daylight
     private let daylightScienceCapPerDay: Double = 0.8    // cap daylight contribution per (sim) day
+    private let stepLengthKmPerStep: Double = 0.0007       // ~0.7 km per 1000 steps
+    private let explorationFromStepsScale: Double = 0.6     // fraction of real-world distance counted as exploration
     private var buildDayAccumulator: Double = 0 // accumulates fractional days for construction
+    private var dayProgressAccumulator: Double = 0 // accumulates fraction-of-day for 'today' tracking
+    private var todaysContributions: HealthContributions = .zero // accumulates contributions for the current sim day
+    // Accumulates contributions field-by-field, keeping the latest sunlight multiplier.
+    private static func accumulate(into total: inout HealthContributions, add inc: HealthContributions) {
+        total.stepsExplorationKm += inc.stepsExplorationKm
+        total.passiveExplorationKm += inc.passiveExplorationKm
+        total.exerciseBuildPoints += inc.exerciseBuildPoints
+        total.passiveBuildPoints += inc.passiveBuildPoints
+        total.sleepScience += inc.sleepScience
+        total.daylightScience += inc.daylightScience
+        total.passiveScience += inc.passiveScience
+        // For multipliers, keep the latest value (or the max). Here we choose latest for 'today'.
+        total.sunlightYieldMultiplier = inc.sunlightYieldMultiplier
+    }
     init() {}
 
     mutating func advanceOneDay(state: inout SimulationState,
@@ -16,10 +31,15 @@ struct SimulationEngine {
                                        useZeroWhenNil: Bool = true) {
         // Keep the original day-based API, but route through a fraction-based engine.
         // Here, `health` is interpreted as a full-day total (as before).
-        let m: DailyHealthMetrics = {
-            if let health { return health }
-            return useZeroWhenNil ? .zero : .zero
-        }()
+        let m: DailyHealthMetrics
+        if let health {
+            m = health
+        } else if useZeroWhenNil {
+            m = .zero
+        } else {
+            // If health is nil and we don't want to default to zero, skip this tick entirely.
+            return
+        }
 
         // Advance exactly one full in-game day.
         advanceFractionOfDay(state: &state, healthDeltas: m, fractionOfDay: 1.0, emitDailySummary: true)
@@ -37,20 +57,19 @@ struct SimulationEngine {
                                        fractionOfDay f: Double,
                                        emitDailySummary: Bool = false) {
         
-        if !UserDefaults.standard.bool(forKey: "firstDayEvent"){
+        if state.currentDayIndex == 1 {
             EventGenerator.autoDaily(day: state.currentDayIndex, state: &state)
-            UserDefaults.standard.set(true, forKey: "firstDayEvent")
         }
         
         // Clamp fraction to sensible bounds
-        let f = max(0.0, min(1.0, f))
-        if f == 0 { return }
+        let fClamped = max(0.0, min(1.0, f))
+        if fClamped == 0 { return }
 
         var contrib = HealthContributions.zero
 
         // --- HEALTH INFLUENCES (interpret deltas for partial updates) ---
         // Steps/exercise are treated as deltas since the previous tick.
-        let explorationDeltaFromSteps = explorationStepsScale * tuning.explorationPerSqrtSteps * sqrt(max(healthDeltas.steps, 0) / 1000.0)
+        let explorationDeltaFromSteps = explorationFromStepsScale * stepLengthKmPerStep * max(healthDeltas.steps, 0)
         contrib.stepsExplorationKm = explorationDeltaFromSteps
 
         let sunlightMultiplierRaw = 1 + tuning.sunlightMultiplierAlpha * (healthDeltas.daylightMinutes / (healthDeltas.daylightMinutes + tuning.sunlightHalfSaturationMinutes))
@@ -60,18 +79,23 @@ struct SimulationEngine {
         let buildPointGainFromExercise = tuning.buildPerSqrtExercise * sqrt(max(healthDeltas.exerciseMinutes, 0))
         contrib.exerciseBuildPoints = buildPointGainFromExercise
 
-        // Sleep is better applied as a gentle trickle over the day fraction
+        // Sleep science: apply once per day (no fraction scaling)
         let sleepQualityFactor = exp(-pow((healthDeltas.sleepHours - tuning.sleepOptimalHours), 2) / (2 * pow(tuning.sleepSigma, 2)))
-        let sciencePointGainFromSleep = tuning.sciencePerSleepQuality * sleepQualityFactor * f
-        contrib.sleepScience = sciencePointGainFromSleep
+        // Apply sleep science once per day when sleepHours is reported; do not scale by f
+        if healthDeltas.sleepHours > 0, todaysContributions.sleepScience == 0 {
+            let sciencePointGainFromSleep = tuning.sciencePerSleepQuality * sleepQualityFactor
+            contrib.sleepScience = sciencePointGainFromSleep
+        } else {
+            contrib.sleepScience = 0
+        }
 
         // -- Keep previous values for milestone detection --
         let previousExplored = state.exploredRadiusKm
         _ = state.buildPoints
 
         // 2) Exploration (passive per-day scaled by f + steps delta + tech bonus)
-        let explorationToday = (tuning.passiveExplorationKmPerDay * explorationPassiveScale * f) + explorationDeltaFromSteps
-        contrib.passiveExplorationKm = tuning.passiveExplorationKmPerDay * explorationPassiveScale * f
+        let explorationToday = (tuning.passiveExplorationKmPerDay * explorationPassiveScale * fClamped) + explorationDeltaFromSteps
+        contrib.passiveExplorationKm = tuning.passiveExplorationKmPerDay * explorationPassiveScale * fClamped
         state.exploredRadiusKm += explorationToday * (1 + tuning.explorationTechMultiplierPerLevel * state.technologyLevel)
 
         // Milestone: whole-km crossings (handle multiple in a partial)
@@ -108,7 +132,7 @@ struct SimulationEngine {
         let consumptionPerDay = effectivePopulation * tuning.rationPerPersonPerDay
 
         let previousFood = state.foodStockRations
-        state.foodStockRations = max(0, state.foodStockRations + (yieldPerDay - consumptionPerDay) * f)
+        state.foodStockRations = max(0, state.foodStockRations + (yieldPerDay - consumptionPerDay) * fClamped)
         let shortageToday = (state.foodStockRations == 0)
         let shortageStarted = previousFood > 0 && shortageToday
         if shortageStarted {
@@ -119,7 +143,7 @@ struct SimulationEngine {
         let clampedFoodSurplus = max(-1, min(1, foodSurplusRatio))
 
         // Surplus/Deficit event (kept modest)
-        let netFood = (yieldPerDay - consumptionPerDay) * f
+        let netFood = (yieldPerDay - consumptionPerDay) * fClamped
         if netFood > 2 {
             EventGenerator.foodSurplus(day: state.currentDayIndex, surplus: Int(netFood.rounded()), state: &state)
         } else if netFood < -2 {
@@ -130,11 +154,7 @@ struct SimulationEngine {
         let effectivePop = max(1.0, floor(state.population))
         let dailyConsumptionCheck = effectivePop * tuning.rationPerPersonPerDay
 
-        let cropVarietyMultiplierCheck = 1 + tuning.cropVarietyMaxUplift * (1 - exp(-state.exploredRadiusKm / tuning.cropVarietyRadiusScaleKm))
-        let yieldPerGreenhouseCheck = tuning.baseYieldPerGreenhouse
-            * (1 + tuning.yieldTechBonusPerLevel * state.technologyLevel)
-            * cropVarietyMultiplierCheck
-        _ = state.greenhouseCount * yieldPerGreenhouseCheck
+        // (Removed: Unused debug-check code for crop variety and yield per greenhouse)
 
         let bufferDays = state.foodStockRations / dailyConsumptionCheck
         let freeBeds = Int(floor(state.housingCapacity - effectivePop))
@@ -177,9 +197,9 @@ struct SimulationEngine {
             }
         }
 
-        contrib.passiveBuildPoints = tuning.baseBuildPointsPerDay * f
+        contrib.passiveBuildPoints = tuning.baseBuildPointsPerDay * fClamped
         // Accrue build points continuously
-        state.buildPoints += (tuning.baseBuildPointsPerDay * f + buildPointGainFromExercise) * (1 + tuning.buildTechBonusPerLevel * state.technologyLevel)
+        state.buildPoints += (tuning.baseBuildPointsPerDay * fClamped + buildPointGainFromExercise) * (1 + tuning.buildTechBonusPerLevel * state.technologyLevel)
 
         // If we have an active build, consume fractional days via accumulator; else try to start one
         if let active = state.activeBuild {
@@ -187,7 +207,7 @@ struct SimulationEngine {
             let before = state.activeBuildDaysRemaining
 
             // Convert fractional day progress into whole-day decrements
-            buildDayAccumulator += f
+            buildDayAccumulator += fClamped
             var remaining = before
             while buildDayAccumulator >= 1.0 && remaining > 0 {
                 remaining -= 1
@@ -234,10 +254,11 @@ struct SimulationEngine {
         // 5) Science (passive per-day scaled by f + sleep drip + tech bonus)
         // Small daylight-driven science drip, capped per day to avoid overpowering sleep
         let daylightHours = max(0.0, healthDeltas.daylightMinutes) / 60.0
-        let daylightScience = min(daylightScienceCapPerDay, daylightSciencePerHour * daylightHours) * f
+        let daylightRemainingCap = max(0.0, daylightScienceCapPerDay - todaysContributions.daylightScience)
+        let daylightScience = min(daylightRemainingCap, daylightSciencePerHour * daylightHours)
         contrib.daylightScience = daylightScience
-        contrib.passiveScience  = tuning.passiveSciencePointsPerDay * f
-        state.sciencePoints += (tuning.passiveSciencePointsPerDay * f + sciencePointGainFromSleep + daylightScience) * (1 + tuning.scienceTechBonusPerLevel * state.technologyLevel)
+        contrib.passiveScience  = tuning.passiveSciencePointsPerDay * fClamped
+        state.sciencePoints += (tuning.passiveSciencePointsPerDay * fClamped + contrib.sleepScience + daylightScience) * (1 + tuning.scienceTechBonusPerLevel * state.technologyLevel)
         if state.sciencePoints >= tuning.scienceBreakthroughThreshold {
             state.sciencePoints -= tuning.scienceBreakthroughThreshold
             state.technologyLevel += 1
@@ -258,7 +279,7 @@ struct SimulationEngine {
         let comfortProgress = max(0, min(1, (bufferDaysForBonus - t0) / (tMax - t0)))
         let comfortMult = 1.0 + tuning.birthsComfortBonusMax * comfortProgress
 
-        let births = shortageToday ? 0 : (baseBirths * comfortMult * f)
+        let births = shortageToday ? 0 : (baseBirths * comfortMult * fClamped)
         let previousPopulation = state.population
         state.population = max(0, state.population + births)
 
@@ -279,6 +300,19 @@ struct SimulationEngine {
             state.currentDayIndex += 1
         }
 
-        state.lastContributions = contrib
+        // Accumulate "for today" contributions across partial ticks
+        SimulationEngine.accumulate(into: &todaysContributions, add: contrib)
+        dayProgressAccumulator += fClamped
+
+        // If we've completed a day here (either by explicit daily summary or by accumulating >= 1.0),
+        // finalize today's contributions and reset the accumulator for the next day.
+        if emitDailySummary || dayProgressAccumulator >= 1.0 {
+            state.lastContributions = todaysContributions
+            todaysContributions = .zero
+            dayProgressAccumulator = 0
+        } else {
+            // Expose the day-to-date totals so UI can show non-near-zero values.
+            state.lastContributions = todaysContributions
+        }
     }
 }

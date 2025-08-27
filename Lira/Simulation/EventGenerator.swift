@@ -249,9 +249,10 @@ enum EventGenerator {
     static func autoDaily(day: Int, state: inout SimulationState) {
         
         // Soft early-game narrative moments
-        if day == 1 {
+        if day == 1 && !UserDefaults.standard.bool(forKey: "firstDayEvent") {
             prologue(day: day, state: &state)
             firstNight(day: day, state: &state)
+            UserDefaults.standard.set(true, forKey: "firstDayEvent")
         }
         
         // Always try a small weather note
