@@ -284,6 +284,7 @@ final class ScrollableBackgroundScene: SKScene {
         let width = size.width
         let height = size.height
         
+        /// HOUSES
         addChild(makeBuilding(imageName: "house", height: 120, id: "house",
                               position: CGPoint(x: width * -0.75, y: height * -0.02)))
         addChild(makeBuilding(imageName: "house", height: 120, id: "house",
@@ -299,7 +300,19 @@ final class ScrollableBackgroundScene: SKScene {
 //        
 //        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
 //                              position: CGPoint(x: width * -0.85, y: height * 0.09)))
-
+        
+        /// GREENHOUSES
+        addChild(makeBuilding(imageName: "greenhouse", height: 160, id: "greenhouse",
+                              position: CGPoint(x: width * -0.23, y: height * 0.21)))
+        
+//        addChild(makeBuilding(imageName: "greenhouse_big", height: 200, id: "greenhouse",
+//                              position: CGPoint(x: width * 0.13, y: height * 0.31)))
+//        
+//        addChild(makeConstruction(id: "greenhouse", position: CGPoint(x: width * -0.07, y: height * 0.33)))
+//        
+//        
+//        addChild(makeBuilding(imageName: "greenhouse", height: 160, id: "greenhouse",
+//                              position: CGPoint(x: width * -0.25, y: height * 0.35)))
     }
     
     func makeConstruction(id: String,
