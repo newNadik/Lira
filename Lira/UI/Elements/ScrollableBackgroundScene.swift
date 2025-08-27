@@ -16,6 +16,8 @@ final class ScrollableBackgroundScene: SKScene {
 
     // Character tap callback and references
     var onCharacterTapped: ((String) -> Void)?
+    // Building tap callback
+    var onBuildingTapped: ((String) -> Void)?
     private weak var lirNode: SKNode?
     private weak var beanieNode: SKNode?
     private weak var nayaNode: SKNode?
@@ -25,6 +27,9 @@ final class ScrollableBackgroundScene: SKScene {
     private var targetCamX: CGFloat = 0
     private var camVelocity: CGFloat = 0 // points/sec in scene space
     private var lastUpdateTime: TimeInterval = 0
+
+    // Building layering
+    private static var nextBuildingZ: CGFloat = -3
 
     // Content sizing
     private let imgWidth: CGFloat = 2648
@@ -56,6 +61,7 @@ final class ScrollableBackgroundScene: SKScene {
         // Ensure background exists
         ensureBackground()
         setupCharacters()
+        setupBuildings()
 
         layoutBackgroundToFitHeight()
         centerCamera()
@@ -67,7 +73,7 @@ final class ScrollableBackgroundScene: SKScene {
     override func didChangeSize(_ oldSize: CGSize) {
         // Make sure nodes exist if size changes early
         ensureBackground()
-        setupCharacters()
+//        setupCharacters()
         layoutBackgroundToFitHeight()
         clampCamera()
 
@@ -152,9 +158,13 @@ final class ScrollableBackgroundScene: SKScene {
         // If the user didn't drag much, treat as a tap.
         if dragAccumulated < tapDragThreshold {
             let location = touch.location(in: self)
-            if let tapped = characterSprite(at: location) {
-                if let name = tapped.name, name.hasPrefix("character:") {
-                    onCharacterTapped?(String(name.dropFirst("character:".count)))
+            if let tapped = tappableSprite(at: location),
+               let (kind, id) = tappableInfo(from: tapped) {
+                switch kind {
+                case .character:
+                    onCharacterTapped?(id)
+                case .building:
+                    onBuildingTapped?(id)
                 }
             }
         }
@@ -200,6 +210,10 @@ final class ScrollableBackgroundScene: SKScene {
         }
     }
     
+    /// Naming convention for tappables:
+    /// - Characters: name nodes as "character:<id>" (e.g., character:lir)
+    /// - Buildings:  name the *group/root* node as "building:<groupId>" (e.g., building:greenhouse)
+    ///   Children within the group can share the same name or be unnamed; taps bubble up via parent search.
     func setupCharacters() {
         
         let width = size.width
@@ -238,23 +252,99 @@ final class ScrollableBackgroundScene: SKScene {
     }
     
     // MARK: - Hit testing helpers
-    private func characterSprite(at point: CGPoint) -> SKNode? {
-        // Prefer topmost node with a character: name
+    private enum TappableKind { case character, building }
+
+    /// Returns the topmost tappable sprite under a point, preferring the front-most node.
+    private func tappableSprite(at point: CGPoint) -> SKNode? {
         for node in nodes(at: point).reversed() {
-            if let sprite = characterNode(from: node) { return sprite }
+            if tappableInfo(from: node) != nil { return node }
         }
         return nil
     }
 
-    private func characterNode(from node: SKNode) -> SKNode? {
+    /// Walks up the parent chain to find a node named with a supported prefix and returns (kind, id).
+    private func tappableInfo(from node: SKNode) -> (TappableKind, String)? {
         var current: SKNode? = node
         while let n = current {
-            if let name = n.name, name.hasPrefix("character:"), let sprite = n as? SKNode {
-                return sprite
+            if let name = n.name {
+                if name.hasPrefix("character:") {
+                    let id = String(name.dropFirst("character:".count))
+                    return (.character, id)
+                } else if name.hasPrefix("building:") {
+                    let id = String(name.dropFirst("building:".count))
+                    return (.building, id)
+                }
             }
             current = n.parent
         }
         return nil
     }
 
+    func setupBuildings() {
+        let width = size.width
+        let height = size.height
+        
+        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
+                              position: CGPoint(x: width * -0.75, y: height * -0.02)))
+        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
+                              position: CGPoint(x: width * -0.57, y: height * 0.07)))
+        
+        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
+                              position: CGPoint(x: width * -1.1, y: height * -0.04)))
+        
+        addChild(makeBuilding(imageName: "house_big", height: 190, id: "house",
+                              position: CGPoint(x: width * -1.28, y: height * 0.05)))
+        
+        addChild(makeBuilding(imageName: "house", height: 120, id: "house",
+                              position: CGPoint(x: width * -0.85, y: height * 0.09)))
+    }
+    
+    func makeBuilding(imageName: String,
+                      height: CGFloat,
+                      id: String,
+                      position: CGPoint) -> SKSpriteNode {
+        
+        let texture = SKTexture(imageNamed: imageName)
+        let sprite = SKSpriteNode(texture: texture)
+        
+        // Preserve aspect ratio while setting height
+        let aspect = texture.size().width / texture.size().height
+        sprite.size = CGSize(width: height * aspect, height: height)
+        
+        sprite.position = position
+        sprite.name = "building:\(id)"
+        
+        // Each new building goes behind the previous one
+        sprite.zPosition = ScrollableBackgroundScene.nextBuildingZ
+        ScrollableBackgroundScene.nextBuildingZ -= 1
+        
+        addShadow(to: sprite, color: UIColor(named: "brown") ?? .black)
+        
+        return sprite
+    }
+    
+    func addShadow(to node: SKSpriteNode,
+                   color: UIColor = .black,
+                   offset: CGPoint = CGPoint(x: 4, y: -2),
+                   alpha: CGFloat = 0.3,
+                   blur: CGFloat = 6) {
+        
+        let shadow = SKSpriteNode(texture: node.texture)
+        shadow.size = node.size
+        shadow.color = color
+        shadow.colorBlendFactor = 1.0
+        shadow.alpha = alpha
+        shadow.position = CGPoint(x: offset.x, y: offset.y)
+        shadow.zPosition = node.zPosition - 1
+        
+        // Apply blur effect with an SKEffectNode
+        let effect = SKEffectNode()
+        effect.shouldRasterize = true
+        effect.filter = CIFilter(name: "CIGaussianBlur", parameters: ["inputRadius": blur])
+        effect.addChild(shadow)
+        
+        node.addChild(effect)
+    }
+    
 }
+

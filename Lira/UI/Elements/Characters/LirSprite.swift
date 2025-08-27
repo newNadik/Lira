@@ -2,7 +2,7 @@ import SpriteKit
 
 final class LirSpriteNode: SKNode, SKAnimatableNode {
     // MARK: Sprites
-    private let body = SKSpriteNode(texture: SKTexture(imageNamed: "lir_body"))   // body w/o leaves
+    let body = SKSpriteNode(texture: SKTexture(imageNamed: "lir_body"))   // body w/o leaves
     private let leftLeaf  = SKSpriteNode(texture: SKTexture(imageNamed: "lir_left_leaf"))
     private let rightLeaf = SKSpriteNode(texture: SKTexture(imageNamed: "lir_right_leaf"))
 
